@@ -559,10 +559,20 @@ function NotFound() {
 }
 
 function Router() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const stripBase = (to: string) => (basePath && to.startsWith(basePath) ? to.slice(basePath.length) || '/' : to);
   return (
+    <ClerkProvider
+      publishableKey={clerkPubKey!}
+      proxyUrl={clerkProxyUrl || undefined}
+      appearance={clerkAppearance}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
     <ErrorBoundary resetKey={location}>
       <Switch>
+        <Route path="/sign-in/*?"><SignInPage /></Route>
+        <Route path="/sign-up/*?"><SignUpPage /></Route>
         <Route path="/"><SharedShell><Dashboard /></SharedShell></Route>
         <Route path="/topics"><SharedShell><TopicsPage /></SharedShell></Route>
         <Route path="/practice"><SharedShell><PracticePage /></SharedShell></Route>
@@ -570,6 +580,7 @@ function Router() {
         <Route><NotFound /></Route>
       </Switch>
     </ErrorBoundary>
+    </ClerkProvider>
   );
 }
 
