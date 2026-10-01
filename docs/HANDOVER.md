@@ -1,69 +1,69 @@
 # Handover
 
+Read `PROJECT-STATUS.md` first, then the latest checkpoint
+(`development-log/checkpoints/PHASE-02-CHECKPOINT.md`). Documented ≠ implemented.
+
 ## Project
 
-- **Name:** CCNA Learning SaaS
-- **Purpose:** منصة SaaS لتدريب أسئلة CCNA مع إدارة المحتوى، التمرين، المحاولات، والإحصاءات.
-- **Version:** 0.2.0-foundation
-- **Current phase:** Phase 1 — Project Foundation
+CCNA exam-practice SaaS. Version 0.3.0-auth. Phases 0–2 complete; Phase 3 not started.
 
-## Technology
+## Technology (as implemented)
 
-- **Frontend:** React + Vite + TypeScript
-- **Backend:** Node.js + Express + TypeScript
-- **Database:** PostgreSQL
-- **ORM and validation:** Drizzle ORM + Zod
-- **Authentication:** Database-backed sessions, Argon2id password hashing, secure HTTP-only cookies
-- **Testing:** Vitest for unit/integration tests, Supertest for HTTP, Playwright for a small number of browser flows
-- **Deployment:** Portable Node process plus PostgreSQL; Replit-specific details isolated in `deployment/replit.md`
+- pnpm workspace; Node >= 22 (Replit used 24); TypeScript 5.9
+- Web: React 19 + Vite 7 + Wouter + TanStack Query (`artifacts/ccna-learning`)
+- API: Express 5 (`artifacts/api-server`), esbuild bundle
+- DB: PostgreSQL + Drizzle ORM (`lib/db`), versioned migrations in `lib/db/drizzle`
+- Contracts: OpenAPI (`lib/api-spec`) → Orval → `lib/api-zod`, `lib/api-client-react`
+- Auth: Clerk (identity) + `users` table (role/status) — see `development/clerk-setup.md`
+- Tests: Vitest in `artifacts/api-server`
 
-لم تُثبت هذه التقنيات في كود بعد؛ هذا هو القرار المقترح في Phase 0.
+## Package management
 
-## Current state
+- **Package manager:** pnpm 10.28.0 (`packageManager` in root `package.json`).
+- **Authoritative lockfile:** `pnpm-lock.yaml`. Install: `pnpm install --frozen-lockfile`.
+- `node_modules` is never committed; it is rebuilt from the lockfile.
 
-يوجد تطبيق learner وAPI وقاعدة بيانات topics وseed development. لا توجد بعد مصادقة أو أسئلة أو attempts أو اختبارات آلية لميزات المنتج. راجع [`PROJECT-STATUS.md`](./PROJECT-STATUS.md) للحالة الدقيقة.
+### Lovable preview limitation (platform-specific)
 
-## Database
+Lovable's sandbox runs its own `bun install` after dependency changes and
+regenerates a root `bun.lock`, storing packages under `node_modules/.bun`.
+This happened even after `bun.lock` was deleted and pnpm was declared. This
+replaced the pnpm store in earlier runs, which is why packages "disappeared".
+The project is **not** converted to Bun; `bun.lock` is an artefact of the
+Lovable sandbox and should be ignored/deleted on other platforms.
 
-المطبق حاليًا: `topics`. الجداول المقترحة لاحقًا: `users`, `roles`, `user_roles`, `sessions`, `questions`, `question_options`, `question_images`, `tags`, `question_tags`, `attempts`. التفاصيل في [`database/schema.md`](./database/schema.md).
+`build:dev` copies `artifacts/ccna-learning/dist/public` to root `dist/` because
+Lovable's preview deploys only the root `dist/`. Replit and other hosts use
+`artifacts/ccna-learning/dist/public` directly. Root `src/`, `vite.config.ts`,
+`bunfig.toml` belong to the Lovable template and are unused by the app.
 
-## Development
-
-أوامر التشغيل الحالية:
+## Commands
 
 ```bash
-pnpm install
-cp .env.example .env
-pnpm --filter @workspace/db run push
-pnpm --filter @workspace/scripts run seed
-pnpm --filter @workspace/api-server run dev
-pnpm --filter @workspace/ccna-learning run dev
+pnpm install --frozen-lockfile
+cp .env.example .env                                   # fill placeholders locally
+pnpm --filter @workspace/db run migrate                # create/upgrade schema
+pnpm --filter @workspace/scripts run seed              # demo topics (dev only)
+pnpm run dev                                           # API :3000 + web :8080
+pnpm --filter @workspace/api-server test               # tests
 pnpm run typecheck
-pnpm run build
+pnpm run build                                         # production build (all packages)
+pnpm --filter @workspace/api-server run start          # production API start
 ```
 
-هذه الأوامر مخطط لها وليست قابلة للتنفيذ بعد.
+Production web: static files from `artifacts/ccna-learning/dist/public` (needs
+`PORT` and `BASE_PATH` at build time), `/api` routed to the API server.
 
-## Deployment
+## First admin
 
-المتطلبات الحالية: Node.js 24، PostgreSQL، و`DATABASE_URL`. لا توجد عملية نشر منفذة. سيُحدد auth provider قبل المرحلة التالية.
+`pnpm --filter @workspace/scripts run promote-admin -- <email>` after that user signed in once.
 
 ## Security
 
-- منع الوصول الإداري على الخادم، لا عبر إخفاء الأزرار فقط.
-- عدم تخزين كلمات المرور أو الأسرار في المصدر.
-- التحقق من payloads عبر Zod.
-- منع mass assignment عبر DTOs صريحة.
-- تسجيل آمن لا يحتوي كلمات مرور أو tokens.
+- Admin checks are server-side (`requireAdmin`), role from DB only.
+- Secrets only in env/secret stores; API validates env at startup without printing values.
+- No auth bypass exists; do not add one without explicit owner approval.
 
 ## Next steps
 
-1. مراجعة foundation الحالية.
-2. اختيار وتنفيذ authentication provider.
-3. إضافة users/roles وserver-side authorization.
-4. إضافة question content model.
-3. تحديث checkpoint وstatus بعد التحقق من الخادم والاختبارات الأساسية.
-
-## Handover rule
-
-أي فريق يستلم المشروع يجب أن يقرأ `PROJECT-STATUS.md` أولًا، ثم checkpoint الأخير، وألا يفترض أن تصميمًا موثقًا يعني أنه منفذ.
+Configure Clerk keys → verify live sign-in → Phase 3 (needs approval).

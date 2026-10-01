@@ -45,3 +45,10 @@ Authentication، authorization، topic creation، question creation/edit/retriev
 - الاختبارات لا تستخدم أسئلة copyrighted.
 - database tests تستخدم fixture/seed معزولًا.
 - كل bug مثبت يضاف له regression test.
+## Implemented tests (Phase 2)
+
+- `artifacts/api-server/src/middlewares/auth.test.ts` — authentication and authorization middleware
+  (Clerk `getAuth` and DB mocked at the boundary; real middleware logic).
+- `artifacts/api-server/src/lib/env.test.ts` — startup environment validation.
+- Run: `pnpm --filter @workspace/api-server test` (15 tests).
+- Not yet: HTTP-level tests against a real Clerk instance, browser E2E.
