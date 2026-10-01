@@ -1,62 +1,85 @@
-# Clerk development setup
+# Clerk setup
 
-Clerk is the selected authentication provider (see
-`docs/decisions/ADR-003-session-authentication.md`). It is partially
-implemented; this document describes the configuration needed to run it.
+Clerk is the selected authentication provider (ADR-003). Application roles are
+stored in PostgreSQL, **not** in Clerk metadata. There is no development bypass:
+without valid keys the web app shows an "Authentication is not configured"
+screen and the API refuses to start.
 
-## Where Clerk is integrated
+## 1. Environment variables (names verified against source)
 
-### Web app (`artifacts/ccna-learning`)
+| Variable | Read in | Side | Required |
+| --- | --- | --- | --- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | `artifacts/ccna-learning/src/App.tsx` | Browser (public) | Yes |
+| `VITE_CLERK_PROXY_URL` | `artifacts/ccna-learning/src/App.tsx` | Browser | No (production proxy only) |
+| `CLERK_PUBLISHABLE_KEY` | `artifacts/api-server/src/app.ts` | Server | Yes (validated at startup) |
+| `CLERK_SECRET_KEY` | `@clerk/express`, `clerkProxyMiddleware.ts` | Server only | Yes (validated at startup) |
 
-- `src/App.tsx`
-  - `ClerkProvider` wraps the app with the `shadcn` theme from `@clerk/themes`.
-  - The publishable key comes from `publishableKeyFromHost(hostname, VITE_CLERK_PUBLISHABLE_KEY)`
-    (`@clerk/react/internal`), so a key is required even in development —
-    the app throws `Missing VITE_CLERK_PUBLISHABLE_KEY in .env file` without it.
-  - `SignIn` / `SignUp` components from `@clerk/react` render the auth pages.
-  - `useAuth`, `useUser`, `useClerk` drive the sidebar auth panel and route
-    guards (practice and admin surfaces redirect signed-out users).
-  - `VITE_CLERK_PROXY_URL` is optional and only relevant in production.
+```
+VITE_CLERK_PUBLISHABLE_KEY=<your-clerk-publishable-key>   # pk_test_...
+CLERK_PUBLISHABLE_KEY=<your-clerk-publishable-key>        # same pk_test_ value
+CLERK_SECRET_KEY=<your-clerk-secret-key>                  # sk_test_..., never in frontend
+```
 
-### API server (`artifacts/api-server`)
+Locally: put them in `.env` (git-ignored). Hosted (Replit/Lovable/other): use the
+platform's secrets store. Never commit or paste the secret key.
 
-- `src/app.ts`
-  - `clerkMiddleware` from `@clerk/express` is mounted globally; its
-    publishable key is derived from the request host or `CLERK_PUBLISHABLE_KEY`.
-  - `clerkProxyMiddleware` proxies `/api/__clerk` to Clerk's Frontend API in
-    production only (no-op in development, and a no-op without
-    `CLERK_SECRET_KEY`).
-- `src/middlewares/auth.ts`
-  - `resolveLocalUser` reads the session via `getAuth(request)`, then
-    provisions/updates the matching row in the `users` table
-    (`clerk_user_id`, email, display name, role, status, last login).
-  - `requireAuthenticatedUser` returns 401/403 for unauthenticated or
-    disabled accounts; `requireAdmin` enforces the `ADMIN` role server-side.
+Startup validation (`artifacts/api-server/src/lib/env.ts`) checks presence and the
+`pk_`/`sk_` prefixes and reports variable names only, never values.
 
-### Database (`lib/db/src/schema/users.ts`)
+Note: `publishableKeyFromHost()` fabricates a `clerk.<host>` key when given no key.
+The web app now only calls it when `VITE_CLERK_PUBLISHABLE_KEY` is set, so a
+missing key is reported instead of silently producing a fake key.
 
-- `users` table keyed by unique `clerk_user_id`, with `USER`/`ADMIN` role
-  and `ACTIVE`/`DISABLED` status enums.
+## 2. Required session-token claims
 
-## Required environment variables
+`resolveLocalUser` (`artifacts/api-server/src/middlewares/auth.ts`) reads these
+claims from the Clerk session token:
 
-| Variable | Used by | Required |
+| Claim | Required | Missing → |
 | --- | --- | --- |
-| `CLERK_SECRET_KEY` | API server (`@clerk/express`, production proxy) | Yes for authenticated API calls |
-| `CLERK_PUBLISHABLE_KEY` | API server (`clerkMiddleware`) | Yes |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Web app (`ClerkProvider`) | Yes — app will not start without it |
-| `VITE_CLERK_PROXY_URL` | Web app | No — production proxy only |
+| `email` | Yes | 401 `UNAUTHENTICATED` |
+| `firstName`, `lastName` | No | display name falls back to email prefix |
 
-Copy `.env.example` to `.env` and fill in the development-instance keys from
-the Clerk dashboard (API Keys page). Never commit real keys.
+Clerk does not include these by default. In the Clerk Dashboard →
+**Sessions → Customize session token**, add:
 
-## Current state
+```json
+{
+  "email": "{{user.primary_email_address}}",
+  "firstName": "{{user.first_name}}",
+  "lastName": "{{user.last_name}}"
+}
+```
 
-- Implemented: provider selection, middleware wiring, sign-in/sign-up UI,
-  server-side session resolution, local user provisioning, role/status
-  enforcement helpers (`requireAuthenticatedUser`, `requireAdmin`).
-- Missing: Clerk credentials in the environment (blocked until keys are
-  added), webhook-based user sync (users are provisioned lazily on first
-  authenticated request instead), and automated tests for the auth flows.
-- The public surfaces (dashboard, topic map, health) work without Clerk;
-  sign-in, practice, and admin surfaces require valid keys.
+Never add a `role` claim expecting it to grant access — the API ignores it;
+role always comes from the `users` table (covered by a test).
+
+## 3. Flow
+
+```text
+Browser (ClerkProvider, /sign-in, /sign-up)
+  -> Clerk session cookie, same-origin /api requests
+API clerkMiddleware -> getAuth(req).userId
+  -> users row by clerk_user_id (created lazily on first call, role USER)
+  -> status ACTIVE? else 403 ACCOUNT_DISABLED
+  -> requireAdmin: role ADMIN? else 403 FORBIDDEN
+```
+
+Endpoints: `GET /api/auth/me` (authenticated), `GET /api/admin/access` (ADMIN).
+
+## 4. First admin
+
+No user is ever promoted automatically and no admin email is hard-coded.
+
+1. The person signs in once through the app (creates their `users` row as USER).
+2. An operator with direct database access runs:
+   ```bash
+   DATABASE_URL=<connection-string> pnpm --filter @workspace/scripts run promote-admin -- person@example.com
+   ```
+   Revert with `--demote`. There is deliberately no HTTP endpoint for this.
+
+## 5. Not implemented (known gaps)
+
+- Clerk webhooks (user updates/deletions are not synced; provisioning is lazy).
+- Admin UI for role management (Phase 6).
+- End-to-end sign-in test against a real Clerk instance (needs real keys).

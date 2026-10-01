@@ -1,24 +1,15 @@
 # Local Setup
 
-المسار الحالي للمطور الجديد:
+Requirements: Node.js >= 22, pnpm 10.28 (`corepack enable`), PostgreSQL, git.
 
 ```bash
-git clone <repository-url>
-cd CCNA-SaaS
-npm install
-cp .env.example .env
-# عدّل DATABASE_URL وقيم البيئة المحلية فقط
-pnpm --filter @workspace/db run push
+git clone <repository-url> && cd CCNA-SaaS
+pnpm install --frozen-lockfile
+cp .env.example .env        # fill DATABASE_URL and Clerk placeholders (never commit .env)
+pnpm --filter @workspace/db run migrate
 pnpm --filter @workspace/scripts run seed
-pnpm --filter @workspace/api-server run dev
+pnpm run dev                # API on :3000, web on :8080 (proxies /api)
 ```
 
-في طرفية أخرى:
-
-```bash
-pnpm --filter @workspace/ccna-learning run dev
-pnpm run typecheck
-pnpm run build
-```
-
-المتطلبات: Node.js 24، pnpm، PostgreSQL متاح محليًا أو عن بعد، وgit. لا يوجد test suite للميزات بعد.
+Checks: `pnpm run typecheck`, `pnpm --filter @workspace/api-server test`, `pnpm run build`.
+Clerk configuration: `docs/development/clerk-setup.md`. Migrations: `docs/database/migrations.md`.

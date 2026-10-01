@@ -1,19 +1,12 @@
-import app from "./app";
-import { logger } from "./lib/logger";
+import { assertEnv } from "./lib/env";
 
-const rawPort = process.env["PORT"];
+// Validate configuration before loading modules that read it (db, Clerk).
+assertEnv();
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
+const { default: app } = await import("./app");
+const { logger } = await import("./lib/logger");
 
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+const port = Number(process.env["PORT"]);
 
 app.listen(port, (err) => {
   if (err) {

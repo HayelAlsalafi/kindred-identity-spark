@@ -14,14 +14,27 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+// publishableKeyFromHost() fabricates a "clerk.<host>" key when no key is given,
+// which would hide a missing configuration. Only use it when a key is set.
+const configuredClerkKey: string | undefined = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.trim() || undefined;
+const clerkPubKey = configuredClerkKey
+  ? publishableKeyFromHost(window.location.hostname, configuredClerkKey)
+  : undefined;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+// No bypass: without a publishable key the app shows a configuration screen
+// instead of crashing or rendering unauthenticated "fake" access.
+function MissingClerkConfig() {
+  return (
+    <main role="alert" style={{ maxWidth: 560, margin: '15vh auto', padding: 24, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Authentication is not configured</h1>
+      <p style={{ marginBottom: 12 }}>
+        This app uses Clerk for sign-in. Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> for the web app, and
+        <code> CLERK_PUBLISHABLE_KEY</code> and <code>CLERK_SECRET_KEY</code> for the API server, then restart.
+      </p>
+      <p>See <code>docs/development/clerk-setup.md</code>.</p>
+    </main>
+  );
 }
 
 const clerkAppearance = {
@@ -548,10 +561,20 @@ function NotFound() {
 }
 
 function Router() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const stripBase = (to: string) => (basePath && to.startsWith(basePath) ? to.slice(basePath.length) || '/' : to);
   return (
+    <ClerkProvider
+      publishableKey={clerkPubKey!}
+      proxyUrl={clerkProxyUrl || undefined}
+      appearance={clerkAppearance}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
     <ErrorBoundary resetKey={location}>
       <Switch>
+        <Route path="/sign-in/*?"><SignInPage /></Route>
+        <Route path="/sign-up/*?"><SignUpPage /></Route>
         <Route path="/"><SharedShell><Dashboard /></SharedShell></Route>
         <Route path="/topics"><SharedShell><TopicsPage /></SharedShell></Route>
         <Route path="/practice"><SharedShell><PracticePage /></SharedShell></Route>
@@ -559,6 +582,7 @@ function Router() {
         <Route><NotFound /></Route>
       </Switch>
     </ErrorBoundary>
+    </ClerkProvider>
   );
 }
 
@@ -567,7 +591,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
+          {clerkPubKey ? <Router /> : <MissingClerkConfig />}
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
