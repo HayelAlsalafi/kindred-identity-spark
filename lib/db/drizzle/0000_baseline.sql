@@ -1,7 +1,17 @@
-CREATE TYPE "public"."topic_status" AS ENUM('ACTIVE', 'DISABLED');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('USER', 'ADMIN');--> statement-breakpoint
-CREATE TYPE "public"."user_status" AS ENUM('ACTIVE', 'DISABLED');--> statement-breakpoint
-CREATE TABLE "topics" (
+-- Baseline migration (Phase 1 + Phase 2 schema).
+-- Hand-edited to be IDEMPOTENT: it is safe on an empty database AND on a
+-- database previously initialised with `drizzle-kit push` (Replit dev DB).
+-- It never drops or alters existing objects or data.
+DO $$ BEGIN
+  CREATE TYPE "public"."topic_status" AS ENUM('ACTIVE', 'DISABLED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;--> statement-breakpoint
+DO $$ BEGIN
+  CREATE TYPE "public"."user_role" AS ENUM('USER', 'ADMIN');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;--> statement-breakpoint
+DO $$ BEGIN
+  CREATE TYPE "public"."user_status" AS ENUM('ACTIVE', 'DISABLED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "topics" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"slug" varchar(120) NOT NULL,
 	"name" varchar(180) NOT NULL,
@@ -13,7 +23,7 @@ CREATE TABLE "topics" (
 	CONSTRAINT "topics_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"clerk_user_id" varchar(255) NOT NULL,
 	"email" varchar(320) NOT NULL,
@@ -27,6 +37,6 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE INDEX "topics_status_order_idx" ON "topics" USING btree ("status","display_order");--> statement-breakpoint
-CREATE INDEX "users_role_status_idx" ON "users" USING btree ("role","status");--> statement-breakpoint
-CREATE INDEX "users_last_login_idx" ON "users" USING btree ("last_login_at");
+CREATE INDEX IF NOT EXISTS "topics_status_order_idx" ON "topics" USING btree ("status","display_order");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "users_role_status_idx" ON "users" USING btree ("role","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "users_last_login_idx" ON "users" USING btree ("last_login_at");
