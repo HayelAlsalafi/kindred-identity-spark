@@ -1,112 +1,70 @@
 # Project Status
 
-## Project
-
 - **Name:** CCNA Learning SaaS
-- **Version:** 0.2.0-foundation
-- **Current phase:** Phase 1 — Project Foundation
-- **Current milestone:** تشغيل learner foundation مع API وPostgreSQL
-- **Overall completion:** foundation منفذة؛ ميزات التعلم والإدارة الأساسية لم تُنفذ بعد.
+- **Version:** 0.3.0-auth
+- **Last updated:** 2026-10-01
 
-## Completed
+| Phase | Status |
+| --- | --- |
+| Phase 0 — Architecture | COMPLETE |
+| Phase 1 — Foundation | COMPLETE |
+| Phase 2 — Auth, users, roles, authorization | COMPLETE (code + tests); live Clerk sign-in unverified |
+| Phase 3 — Topics & question management | NOT STARTED (awaiting approval) |
 
-- تقييم أن مساحة العمل الحالية فارغة.
-- تعريف نطاق MVP الأولي ومنع التوسع المبكر.
-- اقتراح مكدس تقني محمول.
-- تصميم أولي لنموذج البيانات والعلاقات.
-- تصميم authentication وauthorization.
-- تعريف حدود REST API المخططة.
-- تعريف هيكل لوحة الإدارة.
-- تعريف استراتيجية الاختبار وقابلية التوسع.
-- إنشاء حزمة وثائق Phase 0.
-- إنشاء تطبيق React/Vite قابل للتشغيل.
-- إنشاء OpenAPI contract للـ health/topics/dashboard.
-- توليد React Query hooks وZod schemas.
-- إنشاء جدول `topics` وفهرس الحالة/الترتيب.
-- إضافة API routes حقيقية للموضوعات وملخص dashboard.
-- إضافة خمس موضوعات demo في PostgreSQL وseed script قابل للتكرار.
-- إضافة learner dashboard وtopic map وpractice entry وadmin boundary.
-- التحقق من typecheck وAPI عبر proxy وواجهة preview.
+## Current blocker
 
-## Partially completed
+Live sign-in cannot be verified until Clerk development keys are configured and the
+session token is customised (see `development/clerk-setup.md`). Nothing else blocks.
 
-- `topics` هو الجزء المنفذ من schema؛ بقية النموذج ما زال مخططًا.
-- الإحصاءات المعروضة foundation aggregates بقيم صفرية لأن questions وattempts لم تُنفذ.
-- الجلسات والمصادقة غير منفذة؛ admin route حاليًا boundary بصري فقط.
+## Implemented features
 
-## Not implemented
+- Learner dashboard, topic map, practice entry, admin boundary (Phase 1).
+- API: `GET /api/healthz`, `/api/topics`, `/api/dashboard/summary` (public);
+  `GET /api/auth/me` (authenticated); `GET /api/admin/access` (ADMIN).
+- Clerk sign-in/sign-up pages, provider, server session verification.
+- Local user provisioning by `clerk_user_id`; roles USER/ADMIN and status in PostgreSQL.
+- Server-side authorization middleware; consistent auth error format.
+- Configuration screen when Clerk key missing; API startup env validation.
+- First-admin operator script.
 
-- Authentication
-- Authorization
-- Questions and question options
-- Admin dashboard actions
-- Practice engine
-- Attempts and statistics
-- Image upload/storage
-- Automated application tests
-- Deployment configuration
-- Production observability
+## Database state
 
-## Known bugs and limitations
+- Tables: `topics`, `users` (+ enums, indexes). Versioned migrations in `lib/db/drizzle/`
+  with an idempotent baseline (see `database/migrations.md`). Seed: 5 demo topics.
 
-- لا توجد اختبارات آلية لميزات المنتج بعد؛ الموجود تحقق typecheck وsmoke checks يدوي.
-- لا يوجد question content حقيقي؛ البيانات الحالية topics تجريبية فقط.
-- أرقام السعة والأداء غير معروفة وتحتاج قياسات فعلية.
+## Authentication state
 
-## Technical debt
+Clerk (ADR-003). No bypass, no fake tokens. Role never taken from token claims.
 
-- لا يوجد دين كودي معروف في foundation.
-- endpoint response fields الخاصة بالتقدم ستحتاج ربطها بـ attempts بدل القيم الصفرية.
+## Environment variables
 
-## Current database status
+```
+DATABASE_URL=<your-postgresql-connection-string>
+VITE_CLERK_PUBLISHABLE_KEY=<your-clerk-publishable-key>
+CLERK_PUBLISHABLE_KEY=<your-clerk-publishable-key>
+CLERK_SECRET_KEY=<your-clerk-secret-key>
+VITE_CLERK_PROXY_URL=<optional>
+PORT, BASE_PATH  (supplied by the dev scripts/workflow)
+```
 
-- PostgreSQL development متصل.
-- جدول `topics` مطبق عبر Drizzle push، مع index على `(status, display_order)`.
-- seed script موجود في `scripts/src/seed.ts` وقد أضيفت 5 topics demo.
-- بقية الجداول المقترحة لم تُطبق.
+## Verification results (2026-10-01, Lovable sandbox, Node 22.22, pnpm 10.28)
 
-## Current API status
+| Check | Result |
+| --- | --- |
+| Clean `pnpm install --frozen-lockfile` | PASS |
+| `pnpm run typecheck` | PASS |
+| Web build, API build | PASS |
+| API tests (`pnpm --filter @workspace/api-server test`) | PASS — 15/15 |
+| API refuses start without env, names listed, no values | PASS |
+| Migrations: empty DB, push-initialised DB with data, re-run | PASS (data preserved) |
+| API startup vs. temp PostgreSQL: healthz/topics/dashboard 200; auth/me and admin/access 401 without session | PASS |
+| `promote-admin`: existing user promoted; unknown email refused | PASS |
+| Web without key shows configuration screen, no crash | PASS (browser check) |
+| Live Clerk sign-in / ADMIN flow | NOT RUN — no keys |
 
-- `GET /api/healthz` منفذ.
-- `GET /api/topics` منفذ ويقرأ active topics من PostgreSQL.
-- `GET /api/dashboard/summary` منفذ ويعيد foundation summary.
-- العقد والمخططات المولدة في [`api/README.md`](./api/README.md) و`lib/api-spec/openapi.yaml`.
+No load, performance or production-readiness testing has been done.
 
-## Current authentication status
+## Next exact step
 
-- لا يوجد تسجيل دخول منفذ.
-- admin route لا يمنح صلاحية؛ هو placeholder بصري فقط.
-- قرار مزود authentication سيُحسم عند Phase 2 قبل بناء أي حسابات.
-
-## Current testing status
-
-- `pnpm run typecheck` نجح.
-- تم فحص health/topics/dashboard عبر proxy.
-- تم فحص preview بصريًا عند desktop.
-- لم تُنفذ اختبارات آلية أو E2E بعد.
-
-## Current deployment status
-
-- لا يوجد deployment منشور.
-- workflow الخاص بالـ API والواجهة يعمل محليًا داخل المشروع.
-- متطلبات النقل بين Replit وبيئات أخرى موثقة في `deployment/`.
-
-## Environment requirements
-
-يلزم Node.js 24/TypeScript 5.9 حسب workspace، PostgreSQL، وملف `.env` مبني على `.env.example`.
-
-## Last completed task
-
-تنفيذ Phase 1 Foundation والتحقق من API والواجهة.
-
-## Current task
-
-توسيع foundation إلى Phase 2: database entities للمستخدمين/questions/attempts مع authentication معتمد.
-
-## Exact next task
-
-قبل تنفيذ auth، مراجعة قرار Clerk/Replit-managed auth ثم إنشاء users/roles وserver-side authorization.
-
-## Recommended next development step
-
-الانتقال إلى Phase 2 فقط بعد مراجعة foundation، مع إبقاء question engine خارج هذا checkpoint.
+1. Configure Clerk keys and session-token claims; sign in; run `promote-admin`; confirm `/admin`.
+2. On approval, start Phase 3.
