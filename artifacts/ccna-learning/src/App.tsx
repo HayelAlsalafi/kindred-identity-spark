@@ -5,7 +5,7 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { ArrowRight, BookOpen, Check, ChevronRight, CircleAlert, CircleGauge, Clock3, Layers3, LockKeyhole, LogIn, LogOut, Network, Radar, ShieldCheck, Target, UserRound } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useGetAdminAccess, useGetCurrentUser, useHealthCheck, useListTopics, useGetDashboardSummary } from '@workspace/api-client-react';
+import { useGetAdminAccess, useGetCurrentUser, useHealthCheck, useListTopics, useGetDashboardSummary, getGetCurrentUserQueryKey, getGetAdminAccessQueryKey } from '@workspace/api-client-react';
 import type { CurrentUser, TopicSummary } from '@workspace/api-client-react';
 import { Link, Redirect, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -71,6 +71,7 @@ function AuthPanel() {
   const { signOut } = useClerk();
   const currentUserQuery = useGetCurrentUser({
     query: {
+      queryKey: getGetCurrentUserQueryKey(),
       enabled: isLoaded && Boolean(isSignedIn),
       retry: false,
     },
@@ -427,6 +428,7 @@ function AdminPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const currentUserQuery = useGetCurrentUser({
     query: {
+      queryKey: getGetCurrentUserQueryKey(),
       enabled: isLoaded && Boolean(isSignedIn),
       retry: false,
     },
@@ -434,6 +436,7 @@ function AdminPage() {
   const currentUser = currentUserQuery.data?.user;
   const adminAccessQuery = useGetAdminAccess({
     query: {
+      queryKey: getGetAdminAccessQueryKey(),
       enabled: currentUser?.role === 'ADMIN',
       retry: false,
     },
