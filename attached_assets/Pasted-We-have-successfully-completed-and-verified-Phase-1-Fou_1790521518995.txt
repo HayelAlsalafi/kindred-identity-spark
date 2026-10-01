@@ -1,0 +1,514 @@
+We have successfully completed and verified Phase 1 — Foundation.
+
+Do NOT rebuild the existing project.
+
+Do NOT replace the current architecture.
+
+Do NOT redesign the existing UI unless required by this phase.
+
+Do NOT implement Phase 3 or the question engine yet.
+
+We are now proceeding to:
+
+# PHASE 2 — AUTHENTICATION, USERS, ROLES & AUTHORIZATION
+
+Before making changes, inspect the existing project and read the current documentation, especially:
+
+/docs/PROJECT-STATUS.md
+/docs/HANDOVER.md
+/docs/architecture/
+/docs/database/
+/docs/development-log/
+/docs/development-log/checkpoints/PHASE-01-CHECKPOINT.md
+/docs/decisions/
+
+Treat the existing implementation as the source of truth.
+
+============================================================
+1. OBJECTIVE
+============================================================
+
+Implement the authentication and authorization foundation required for the CCNA SaaS platform.
+
+The platform must support multiple users.
+
+Initial roles:
+
+USER
+ADMIN
+
+The architecture must be extensible for future roles such as:
+
+SUPER_ADMIN
+CONTENT_EDITOR
+MODERATOR
+
+Do not implement those future roles yet.
+
+============================================================
+2. USER MODEL
+============================================================
+
+Create a proper users table/model.
+
+At minimum support:
+
+- id
+- email
+- password hash or the fields required by the selected authentication system
+- display name
+- role
+- status
+- createdAt
+- updatedAt
+- lastLoginAt
+
+Use appropriate:
+
+- Primary key
+- Unique constraint on email
+- Indexes where appropriate
+- Timestamps
+
+Do not store plaintext passwords.
+
+Do not expose password hashes through API responses.
+
+============================================================
+3. AUTHENTICATION
+============================================================
+
+Implement a secure authentication mechanism appropriate for the current stack.
+
+Support:
+
+- Registration only if appropriate for the selected product architecture
+- Login
+- Logout
+- Session persistence
+- Current authenticated user endpoint
+
+At minimum provide an endpoint equivalent to:
+
+GET /api/auth/me
+
+and appropriate login/logout endpoints.
+
+Use secure session/token practices appropriate for the architecture.
+
+Do not invent a custom insecure authentication mechanism if the existing stack provides a suitable established approach.
+
+Document the authentication choice and why it was selected.
+
+============================================================
+4. AUTHORIZATION
+============================================================
+
+Implement server-side authorization.
+
+This is critical.
+
+Do NOT rely on frontend route hiding.
+
+For example:
+
+A USER must NOT be able to call Admin APIs simply by manually entering their URL.
+
+Admin authorization must be enforced by the backend.
+
+Create reusable authorization middleware/guards where appropriate.
+
+Example:
+
+requireAuthenticatedUser()
+requireAdmin()
+
+Avoid duplicating authorization logic across every endpoint.
+
+============================================================
+5. ADMIN ACCESS
+============================================================
+
+The existing:
+
+/admin
+
+route is currently only a boundary.
+
+Connect it to the real authentication state.
+
+Behavior:
+
+Unauthenticated user:
+→ cannot access admin functionality.
+
+Authenticated USER:
+→ cannot access admin functionality.
+
+Authenticated ADMIN:
+→ can access admin functionality.
+
+Do not build the complete Admin Dashboard yet.
+
+Only establish the secure foundation.
+
+============================================================
+6. USER EXPERIENCE
+============================================================
+
+Add the minimum UI required for authentication:
+
+- Login page
+- Authentication state
+- Logout
+- Current user display where appropriate
+- Protected Admin route
+- Appropriate unauthorized/forbidden state
+
+Do not spend significant effort on visual redesign.
+
+Preserve the current design language.
+
+============================================================
+7. API
+============================================================
+
+Document and implement the necessary endpoints.
+
+At minimum:
+
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+
+If registration is implemented:
+
+POST /api/auth/register
+
+If the selected authentication architecture requires different endpoints, use the appropriate design and document it.
+
+All endpoints must have:
+
+- Validation
+- Appropriate HTTP status codes
+- Safe error responses
+- Authentication/authorization rules
+
+============================================================
+8. SECURITY
+============================================================
+
+Implement appropriate protections for authentication.
+
+At minimum consider:
+
+- Password hashing
+- Secure session handling
+- Input validation
+- Authentication error handling
+- Authorization
+- Protection against obvious brute-force abuse
+- No sensitive information in logs
+- No password exposure
+- No token exposure
+- Environment variables for secrets
+
+Do not claim that advanced security controls exist unless implemented.
+
+Document future security improvements separately.
+
+============================================================
+9. DATABASE
+============================================================
+
+Update the database schema using the existing migration approach.
+
+Do NOT modify existing topic functionality unnecessarily.
+
+Create the user/role-related database structures required for this phase.
+
+If the architecture uses an enum for roles/statuses, document it.
+
+Add appropriate indexes.
+
+Do not create unnecessary tables.
+
+============================================================
+10. SEED / DEVELOPMENT ADMIN
+============================================================
+
+Create a safe development-only way to create an initial Admin account.
+
+Do NOT hard-code a real production password.
+
+If environment variables are used, document them in:
+
+.env.example
+
+Example:
+
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-me-in-development-only
+
+Never commit real credentials.
+
+Clearly document that this is for development/testing.
+
+============================================================
+11. MULTI-USER DESIGN
+============================================================
+
+Every future user-specific entity must be associated with a user.
+
+The architecture must NOT assume a single user.
+
+Future entities such as:
+
+attempts
+progress
+statistics
+study sessions
+
+must be able to reference the authenticated user.
+
+Do not implement attempts yet.
+
+============================================================
+12. FRONTEND STATE
+============================================================
+
+Authentication state must be handled cleanly.
+
+Avoid duplicating authentication state across unrelated components.
+
+The frontend must be able to determine:
+
+- Is the user authenticated?
+- Who is the current user?
+- What role does the user have?
+
+The backend remains authoritative for authorization.
+
+============================================================
+13. ERROR HANDLING
+============================================================
+
+Provide appropriate user-facing states:
+
+Invalid credentials
+Unauthenticated
+Unauthorized
+Session expired
+Server error
+
+Do not expose internal stack traces or database errors to users.
+
+============================================================
+14. TESTING
+============================================================
+
+Add automated tests where practical for:
+
+1. Login with valid credentials.
+2. Login with invalid credentials.
+3. Current user endpoint.
+4. Logout.
+5. Unauthenticated access to protected endpoint.
+6. USER attempting Admin endpoint.
+7. ADMIN accessing Admin endpoint.
+8. Password is not returned by API.
+9. User creation/validation.
+10. Duplicate email handling.
+
+Do not claim tests passed unless actually executed.
+
+============================================================
+15. DOCUMENTATION
+============================================================
+
+This phase MUST update documentation.
+
+Update:
+
+/docs/PROJECT-STATUS.md
+
+/docs/HANDOVER.md
+
+/docs/architecture/authentication.md
+
+/docs/architecture/authorization.md
+
+/docs/database/schema.md
+
+/docs/database/relationships.md
+
+/docs/api/README.md
+
+/docs/security/security-model.md
+
+/docs/testing/testing-strategy.md
+
+/docs/development-log/CHANGELOG.md
+
+Create/update:
+
+/docs/development-log/checkpoints/PHASE-02-CHECKPOINT.md
+
+If an important architectural decision is made, create an ADR under:
+
+/docs/decisions/
+
+============================================================
+16. PORTABILITY REQUIREMENT
+============================================================
+
+Everything implemented in this phase must be documented sufficiently for another developer to continue the project outside Replit.
+
+Document:
+
+- Authentication technology
+- Required environment variables
+- Database migration
+- Development setup
+- Test commands
+- Authentication architecture
+- Authorization architecture
+- Known limitations
+- Future improvements
+
+Do not depend on undocumented Replit behavior.
+
+============================================================
+17. SCALABILITY REQUIREMENT
+============================================================
+
+The authentication architecture must support multiple users and future horizontal scaling.
+
+Avoid:
+
+- Single-user assumptions
+- In-memory persistent user data
+- Hard-coded administrator identity
+- Global mutable authentication state
+- Architecture that requires one specific application process
+
+The architecture should remain compatible with a future deployment involving multiple application instances.
+
+Do not introduce Redis or distributed infrastructure unless genuinely required.
+
+============================================================
+18. PERFORMANCE
+============================================================
+
+Do not make authentication unnecessarily expensive.
+
+Use:
+
+- Appropriate database indexes
+- Efficient user lookup
+- Proper session/token handling
+- Minimal database queries
+
+Do not over-engineer authentication.
+
+============================================================
+19. DO NOT IMPLEMENT YET
+============================================================
+
+Do NOT implement:
+
+- Question creation
+- Question editing
+- Question options
+- Question images
+- Quiz engine
+- Answer submission
+- Attempts
+- Timer
+- Statistics
+- Progress tracking
+- Bulk question import
+- Billing
+- Subscriptions
+- Advanced analytics
+- Advanced admin dashboard
+
+Those belong to later phases.
+
+============================================================
+20. VERIFICATION
+============================================================
+
+After implementation:
+
+Run the relevant:
+
+- Type checking
+- Build
+- Database migration
+- Seed/development setup
+- Automated tests
+
+Verify that Phase 1 functionality still works:
+
+GET /api/healthz
+GET /api/topics
+GET /api/dashboard/summary
+
+Do not break the existing Foundation.
+
+============================================================
+21. REQUIRED FINAL REPORT
+============================================================
+
+At the end provide:
+
+# Phase 2 Development Summary
+
+## Completed
+
+## Files Created
+
+## Files Modified
+
+## Database Changes
+
+## API Changes
+
+## Authentication
+
+## Authorization
+
+## Security
+
+## Testing
+
+## Documentation Updated
+
+## Scalability Considerations
+
+## Known Issues
+
+## Not Implemented
+
+## Exact Current Project Status
+
+## Recommended Next Phase
+
+============================================================
+22. STOP CONDITION
+============================================================
+
+After completing Phase 2 and verification:
+
+STOP.
+
+Do not automatically begin Phase 3.
+
+Wait for my review and approval.
+
+The next planned phase is:
+
+PHASE 3 — QUESTION BANK & ADMIN CONTENT MANAGEMENT
+
+but it must not begin until I explicitly approve it.

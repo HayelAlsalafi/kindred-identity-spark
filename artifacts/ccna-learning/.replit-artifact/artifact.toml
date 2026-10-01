@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CCNA Learning SaaS"
+description = "A professional CCNA exam practice foundation for browsing topics, practicing questions, and tracking learning progress."
+version = "1.0.0"
+id = "artifacts/ccna-learning"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18553
+
+[services.development]
+run = "pnpm --filter @workspace/ccna-learning run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ccna-learning", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ccna-learning/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18553"
+BASE_PATH = "/"

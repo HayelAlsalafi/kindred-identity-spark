@@ -1,0 +1,280 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.2.0
+  description: CCNA Learning SaaS API foundation
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: learning
+    description: Learner-facing read operations
+  - name: auth
+    description: Clerk-backed authentication state
+  - name: admin
+    description: Server-side administrator boundary
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /topics:
+    get:
+      operationId: listTopics
+      tags: [learning]
+      summary: List active CCNA topics
+      description: Returns the active topic catalog with foundation-level progress fields.
+      responses:
+        "200":
+          description: Topic summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopicSummary"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [learning]
+      summary: Get the learning dashboard summary
+      description: Returns aggregate learning metrics for the current foundation experience.
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the current application user
+      description: Returns the local user bridge for the authenticated Clerk session.
+      security:
+        - clerkSession: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account is disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/access:
+    get:
+      operationId: getAdminAccess
+      tags: [admin]
+      summary: Check the server-side administrator boundary
+      description: This foundation endpoint proves that ADMIN authorization is enforced by the server.
+      security:
+        - clerkSession: []
+      responses:
+        "200":
+          description: Administrator access granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccessResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated user is not an administrator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
+      description: Clerk's same-origin session cookie; login and logout are managed by Clerk UI.
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    TopicSummary:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - description
+        - questionCount
+        - attemptedCount
+        - correctCount
+        - accuracy
+        - averageDurationSeconds
+        - progressPercent
+        - displayOrder
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        questionCount:
+          type: integer
+          minimum: 0
+        attemptedCount:
+          type: integer
+          minimum: 0
+        correctCount:
+          type: integer
+          minimum: 0
+        accuracy:
+          type: number
+          minimum: 0
+          maximum: 100
+        averageDurationSeconds:
+          type: integer
+          minimum: 0
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        displayOrder:
+          type: integer
+    DashboardSummary:
+      type: object
+      required:
+        - totalTopics
+        - totalQuestions
+        - questionsAttempted
+        - overallAccuracy
+        - studyMinutes
+        - streakDays
+        - focusTopic
+      properties:
+        totalTopics:
+          type: integer
+          minimum: 0
+        totalQuestions:
+          type: integer
+          minimum: 0
+        questionsAttempted:
+          type: integer
+          minimum: 0
+        overallAccuracy:
+          type: number
+          minimum: 0
+          maximum: 100
+        studyMinutes:
+          type: integer
+          minimum: 0
+        streakDays:
+          type: integer
+          minimum: 0
+        focusTopic:
+          oneOf:
+            - $ref: "#/components/schemas/TopicSummary"
+            - type: "null"
+    CurrentUser:
+      type: object
+      required:
+        - id
+        - email
+        - displayName
+        - role
+        - status
+        - createdAt
+        - updatedAt
+        - lastLoginAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+    CurrentUserResponse:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/CurrentUser"
+    AdminAccessResponse:
+      type: object
+      required:
+        - allowed
+        - role
+      properties:
+        allowed:
+          type: boolean
+          enum: [true]
+        role:
+          type: string
+          enum: [ADMIN]
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
