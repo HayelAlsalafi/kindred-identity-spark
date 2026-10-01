@@ -20,8 +20,19 @@ const clerkPubKey = publishableKeyFromHost(
 );
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+// No bypass: without a publishable key the app shows a configuration screen
+// instead of crashing or rendering unauthenticated "fake" access.
+function MissingClerkConfig() {
+  return (
+    <main role="alert" style={{ maxWidth: 560, margin: '15vh auto', padding: 24, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Authentication is not configured</h1>
+      <p style={{ marginBottom: 12 }}>
+        This app uses Clerk for sign-in. Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> for the web app, and
+        <code> CLERK_PUBLISHABLE_KEY</code> and <code>CLERK_SECRET_KEY</code> for the API server, then restart.
+      </p>
+      <p>See <code>docs/development/clerk-setup.md</code>.</p>
+    </main>
+  );
 }
 
 const clerkAppearance = {
@@ -567,7 +578,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
+          {clerkPubKey ? <Router /> : <MissingClerkConfig />}
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
