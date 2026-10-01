@@ -16,7 +16,7 @@ import { db, pool, usersTable } from "@workspace/db";
 async function main() {
   const args = process.argv.slice(2).filter((a) => a !== "--");
   const demote = args.includes("--demote");
-  const email = args.find((a) => !a.startsWith("--"))?.trim().toLowerCase();
+  const email = args.find((a) => !a.startsWith("--"))?.trim();
 
   if (!email || !email.includes("@")) {
     console.error("Usage: promote-admin <email> [--demote]");
