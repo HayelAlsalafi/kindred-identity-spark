@@ -8,7 +8,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "build:dev": "pnpm run ensure-deps && PORT=8080 BASE_PATH=/ pnpm --filter @workspace/ccna-learning run build",
+    "build:dev": "pnpm run ensure-deps && PORT=8080 BASE_PATH=/ pnpm --filter @workspace/ccna-learning run build && rm -rf dist && cp -r artifacts/ccna-learning/dist/public dist",
     "ensure-deps": "test -d artifacts/ccna-learning/node_modules/.bin && test -d artifacts/api-server/node_modules/esbuild || pnpm install --prefer-offline"
   },
   "private": true,
