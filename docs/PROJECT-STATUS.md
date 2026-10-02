@@ -19,7 +19,7 @@ Values are never recorded here.
 | --- | --- |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Configured (`pk_test_`, public; `artifacts/ccna-learning/.env`) |
 | `CLERK_PUBLISHABLE_KEY` | Configured (project secret, `pk_test_`) |
-| `CLERK_SECRET_KEY` | MISSING (requested via secure form) |
+| `CLERK_SECRET_KEY` | Configured (project secret, server-only, `sk_test_` prefix validated) |
 | `DATABASE_URL` | MISSING (external dependency) |
 | `STRIPE_TEST_API_KEY` | Present but unrelated; not referenced by the app, not used for Clerk |
 
@@ -27,17 +27,16 @@ Values are never recorded here.
 | --- | --- |
 | Frontend Clerk initialisation (config screen gone, `/sign-in` renders Clerk dev UI) | PASS |
 | `CLERK_SECRET_KEY` / `sk_` / Stripe key absent from frontend bundle | PASS (only the variable *name* appears in config-screen text) |
-| Backend Clerk configuration | NOT PASSED — `CLERK_SECRET_KEY` and `DATABASE_URL` missing; API refuses to start by design |
+| Backend Clerk configuration (startup validator) | PASS for Clerk vars; API still refuses to start because `DATABASE_URL` is missing |
 | Real Clerk sign-in (end to end with API) | NOT TESTED |
 | Clerk user → `users.clerk_user_id` mapping | NOT TESTED |
 | ADMIN authorization | NOT TESTED |
 
 ## Current blockers
 
-1. `CLERK_SECRET_KEY` not configured.
-2. `DATABASE_URL` not configured.
-3. Clerk session token `email` claim must be added in the Clerk Dashboard.
-4. A real Clerk test account must sign in (no fake users).
+1. `DATABASE_URL` not configured.
+2. Clerk session token `email` claim must be added in the Clerk Dashboard.
+3. A real Clerk test account must sign in (no fake users).
 
 ## Implemented features
 
