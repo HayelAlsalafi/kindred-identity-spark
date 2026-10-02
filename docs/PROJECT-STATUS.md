@@ -11,10 +11,33 @@
 | Phase 2 — Auth, users, roles, authorization | COMPLETE (code + tests); live Clerk sign-in unverified |
 | Phase 3 — Topics & question management | NOT STARTED (awaiting approval) |
 
-## Current blocker
+## Environment configuration (2026-10-02, Clerk DEVELOPMENT instance)
 
-Live sign-in cannot be verified until Clerk development keys are configured and the
-session token is customised (see `development/clerk-setup.md`). Nothing else blocks.
+Values are never recorded here.
+
+| Variable | Status |
+| --- | --- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Configured (`pk_test_`, public; `artifacts/ccna-learning/.env`) |
+| `CLERK_PUBLISHABLE_KEY` | Configured (project secret, `pk_test_`) |
+| `CLERK_SECRET_KEY` | MISSING (requested via secure form) |
+| `DATABASE_URL` | MISSING (external dependency) |
+| `STRIPE_TEST_API_KEY` | Present but unrelated; not referenced by the app, not used for Clerk |
+
+| Check | Result |
+| --- | --- |
+| Frontend Clerk initialisation (config screen gone, `/sign-in` renders Clerk dev UI) | PASS |
+| `CLERK_SECRET_KEY` / `sk_` / Stripe key absent from frontend bundle | PASS (only the variable *name* appears in config-screen text) |
+| Backend Clerk configuration | NOT PASSED — `CLERK_SECRET_KEY` and `DATABASE_URL` missing; API refuses to start by design |
+| Real Clerk sign-in (end to end with API) | NOT TESTED |
+| Clerk user → `users.clerk_user_id` mapping | NOT TESTED |
+| ADMIN authorization | NOT TESTED |
+
+## Current blockers
+
+1. `CLERK_SECRET_KEY` not configured.
+2. `DATABASE_URL` not configured.
+3. Clerk session token `email` claim must be added in the Clerk Dashboard.
+4. A real Clerk test account must sign in (no fake users).
 
 ## Implemented features
 
