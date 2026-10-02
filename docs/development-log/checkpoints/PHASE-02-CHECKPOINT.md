@@ -31,12 +31,12 @@ See PROJECT-STATUS.md → Verification results.
 ## Environment configuration (2026-10-02)
 
 Clerk development instance. Publishable key configured for web and API; frontend
-Clerk initialisation PASS; no secret in frontend bundle. `CLERK_SECRET_KEY` and
+Clerk initialisation PASS; no secret in frontend bundle. `CLERK_SECRET_KEY` configured and validated (server-only).
 `DATABASE_URL` still missing, so backend, sign-in, user mapping and admin checks are
 not yet tested. `STRIPE_TEST_API_KEY` is unrelated and not used. Details:
 PROJECT-STATUS.md.
 
 ## Remaining
 
-- `CLERK_SECRET_KEY`, `DATABASE_URL`, session-token `email` claim, then real sign-in / admin check.
+- `DATABASE_URL`, session-token `email` claim, then real sign-in / admin check.
 - Lovable preview regenerates `bun.lock` (platform behaviour, see HANDOVER).
