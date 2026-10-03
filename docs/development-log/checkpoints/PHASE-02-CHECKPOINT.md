@@ -1,6 +1,6 @@
 # Phase 2 Checkpoint — Authentication, Users, Roles, Authorization
 
-**Date:** 2026-10-01 · **Status:** COMPLETE in code; live Clerk sign-in not yet verified (needs real keys).
+**Date:** 2026-10-01 · **Status:** COMPLETE in code + tests; live sign-in, user mapping and authorization not yet verified (blocked by `DATABASE_URL` and the session `email` claim; Clerk keys configured).
 
 ## Already present when the project was imported (Replit)
 

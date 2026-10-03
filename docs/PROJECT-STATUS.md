@@ -2,7 +2,7 @@
 
 - **Name:** CCNA Learning SaaS
 - **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-02 (environment configuration reviewed; no code changes)
+- **Last updated:** 2026-10-03 (documentation refresh only; no code changes)
 
 | Phase | Status |
 | --- | --- |
@@ -82,11 +82,16 @@ PORT, BASE_PATH  (supplied by the dev scripts/workflow)
 | API startup vs. temp PostgreSQL: healthz/topics/dashboard 200; auth/me and admin/access 401 without session | PASS |
 | `promote-admin`: existing user promoted; unknown email refused | PASS |
 | Web without key shows configuration screen, no crash | PASS (browser check) |
-| Live Clerk sign-in / ADMIN flow | NOT RUN — no keys |
+| Live Clerk sign-in / ADMIN flow | NOT RUN — Clerk keys configured; blocked by `DATABASE_URL` and session `email` claim |
 
 No load, performance or production-readiness testing has been done.
 
-## Next exact step
+## Next exact step (as of 2026-10-03)
 
-1. Configure Clerk keys and session-token claims; sign in; run `promote-admin`; confirm `/admin`.
-2. On approval, start Phase 3.
+Clerk keys are configured and verified (frontend init, backend config, secret server-only — PASS). Remaining sequence:
+
+1. Configure `DATABASE_URL`.
+2. Configure the Clerk session-token `email` claim.
+3. Perform real Clerk test-account sign-in.
+4. Run the full Phase 2 end-to-end verification.
+5. If Phase 2 passes, STOP and wait for explicit approval before Phase 3.

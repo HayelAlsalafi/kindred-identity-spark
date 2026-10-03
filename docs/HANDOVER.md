@@ -5,7 +5,7 @@ Read `PROJECT-STATUS.md` first, then the latest checkpoint
 
 ## Project
 
-CCNA exam-practice SaaS. Version 0.3.0-auth. Phases 0–2 complete; Phase 3 not started.
+CCNA exam-practice SaaS. Version 0.3.0-auth. Phases 0–1 complete; Phase 2 complete in code + tests but NOT fully verified (live sign-in, user mapping, authorization still pending); Phase 3 not started.
 
 ## Technology (as implemented)
 
@@ -64,6 +64,13 @@ Production web: static files from `artifacts/ccna-learning/dist/public` (needs
 - Secrets only in env/secret stores; API validates env at startup without printing values.
 - No auth bypass exists; do not add one without explicit owner approval.
 
-## Next steps
+## Next steps (as of 2026-10-03)
 
-Configure Clerk keys → verify live sign-in → Phase 3 (needs approval).
+Clerk keys are configured and verified (frontend init, backend config, secret server-only — PASS).
+The remaining sequence is:
+
+1. Configure `DATABASE_URL`.
+2. Configure the Clerk session-token `email` claim (Clerk Dashboard → Sessions → Customize session token; see `development/clerk-setup.md`).
+3. Perform a real Clerk test-account sign-in (no fake users, no bypass).
+4. Run the full Phase 2 end-to-end verification (user mapping, USER/ADMIN/disabled authorization, logout/session).
+5. If Phase 2 passes, update PROJECT-STATUS.md + checkpoint and STOP — Phase 3 starts only on explicit owner approval.
