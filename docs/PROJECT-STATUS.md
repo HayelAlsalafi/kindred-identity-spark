@@ -36,7 +36,9 @@ Values are never recorded here.
 | `GET /api/auth/me`, `/api/admin/access` without session / with invalid token | PASS — 401 `UNAUTHENTICATED`, no internal details |
 | Frontend Clerk initialisation | PASS (2026-10-02) |
 | Secret absent from frontend bundle | PASS (2026-10-02) |
-| Real Clerk sign-in | NOT TESTED — no real Clerk test account signed in (`users` table has 0 rows) |
+| Real Clerk sign-in, mapping, first-time creation, `/api/auth/me` as USER | PASS (live, 2026-10-03) |
+| `promote-admin` on real account | PASS (role ADMIN) |
+| Live `/api/admin/access` as ADMIN, disabled 403, logout | NOT VERIFIED |
 | Session `email` claim (live token) | NOT TESTED live (requires real sign-in) |
 | Clerk user → `users.clerk_user_id` mapping, first-time creation | NOT TESTED live (unit tests PASS) |
 | USER / ADMIN / disabled-account authorization (live) | NOT TESTED live (unit tests PASS) |
