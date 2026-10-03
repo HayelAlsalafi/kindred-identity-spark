@@ -40,3 +40,11 @@ PROJECT-STATUS.md.
 
 - `DATABASE_URL`, session-token `email` claim, then real sign-in / admin check.
 - Lovable preview regenerates `bun.lock` (platform behaviour, see HANDOVER).
+
+## Verification run (2026-10-03)
+
+`DATABASE_URL` configured (Neon, project secret). PASS: install, typecheck, API build,
+15/15 tests, migrations + seed on Neon, API startup, public endpoints 200, protected
+endpoints 401 without/invalid session. NOT TESTED: live Clerk sign-in, live email claim,
+`clerk_user_id` mapping, live USER/ADMIN/disabled checks, logout — no real test account
+has signed in yet (0 users). Phase 2 is NOT marked VERIFIED. Phase 3 not started.
