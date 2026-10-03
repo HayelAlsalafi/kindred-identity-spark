@@ -2,16 +2,16 @@
 
 - **Name:** CCNA Learning SaaS
 - **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-03 (documentation refresh only; no code changes)
+- **Last updated:** 2026-10-03 (Phase 2 verification run; no code changes)
 
 | Phase | Status |
 | --- | --- |
 | Phase 0 — Architecture | COMPLETE |
 | Phase 1 — Foundation | COMPLETE |
-| Phase 2 — Auth, users, roles, authorization | COMPLETE (code + tests); live Clerk sign-in unverified |
+| Phase 2 — Auth, users, roles, authorization | COMPLETE (code + tests + DB + API); NOT FULLY VERIFIED — live Clerk sign-in pending |
 | Phase 3 — Topics & question management | NOT STARTED (awaiting approval) |
 
-## Environment configuration (2026-10-02, Clerk DEVELOPMENT instance)
+## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
 
 Values are never recorded here.
 
@@ -20,23 +20,32 @@ Values are never recorded here.
 | `VITE_CLERK_PUBLISHABLE_KEY` | Configured (`pk_test_`, public; `artifacts/ccna-learning/.env`) |
 | `CLERK_PUBLISHABLE_KEY` | Configured (project secret, `pk_test_`) |
 | `CLERK_SECRET_KEY` | Configured (project secret, server-only, `sk_test_` prefix validated) |
-| `DATABASE_URL` | MISSING (external dependency) |
+| `DATABASE_URL` | Configured 2026-10-03 (project secret, Neon pooled connection) |
 | `STRIPE_TEST_API_KEY` | Present but unrelated; not referenced by the app, not used for Clerk |
+
+## Phase 2 verification run (2026-10-03)
 
 | Check | Result |
 | --- | --- |
-| Frontend Clerk initialisation (config screen gone, `/sign-in` renders Clerk dev UI) | PASS |
-| `CLERK_SECRET_KEY` / `sk_` / Stripe key absent from frontend bundle | PASS (only the variable *name* appears in config-screen text) |
-| Backend Clerk configuration (startup validator) | PASS for Clerk vars; API still refuses to start because `DATABASE_URL` is missing |
-| Real Clerk sign-in (end to end with API) | NOT TESTED |
-| Clerk user → `users.clerk_user_id` mapping | NOT TESTED |
-| ADMIN authorization | NOT TESTED |
+| Frozen install, typecheck, API build | PASS |
+| Existing Vitest suite (auth, authz, disabled, role-claim ignored, env) | PASS — 15/15 |
+| Migrations against Neon (`migrate`), baseline applied, tables `topics`,`users` | PASS |
+| Seed (5 topics) | PASS |
+| API starts with real env (startup validator) | PASS |
+| `GET /api/healthz`, `/api/topics`, `/api/dashboard/summary` | PASS — 200 |
+| `GET /api/auth/me`, `/api/admin/access` without session / with invalid token | PASS — 401 `UNAUTHENTICATED`, no internal details |
+| Frontend Clerk initialisation | PASS (2026-10-02) |
+| Secret absent from frontend bundle | PASS (2026-10-02) |
+| Real Clerk sign-in | NOT TESTED — no real Clerk test account signed in (`users` table has 0 rows) |
+| Session `email` claim (live token) | NOT TESTED live (requires real sign-in) |
+| Clerk user → `users.clerk_user_id` mapping, first-time creation | NOT TESTED live (unit tests PASS) |
+| USER / ADMIN / disabled-account authorization (live) | NOT TESTED live (unit tests PASS) |
+| Logout/session behaviour | NOT TESTED |
 
 ## Current blockers
 
-1. `DATABASE_URL` not configured.
-2. Clerk session token `email` claim must be added in the Clerk Dashboard.
-3. A real Clerk test account must sign in (no fake users).
+1. A real person must sign in once with a real Clerk test account in the preview (no fake users created by the agent).
+2. Then promote that account with `promote-admin` for the ADMIN check, and temporarily set `status='DISABLED'` for the disabled-account check.
 
 ## Implemented features
 
