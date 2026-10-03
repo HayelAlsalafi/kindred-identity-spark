@@ -2,7 +2,7 @@
 
 - **Name:** CCNA Learning SaaS
 - **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-01
+- **Last updated:** 2026-10-02 (environment configuration reviewed; no code changes)
 
 | Phase | Status |
 | --- | --- |
