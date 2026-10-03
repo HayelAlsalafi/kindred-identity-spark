@@ -48,3 +48,10 @@ PROJECT-STATUS.md.
 endpoints 401 without/invalid session. NOT TESTED: live Clerk sign-in, live email claim,
 `clerk_user_id` mapping, live USER/ADMIN/disabled checks, logout — no real test account
 has signed in yet (0 users). Phase 2 is NOT marked VERIFIED. Phase 3 not started.
+
+## Live check (2026-10-03, after real Clerk sign-in)
+
+- PASS: real Clerk test user signed in; one `users` row created lazily with a Clerk `user_…` id in `clerk_user_id`, role USER, status ACTIVE (first-time creation + mapping).
+- PASS: `GET /api/auth/me` returned 200 with the local user (role USER) in the preview's own session; email claim present.
+- PASS: `promote-admin` run for this account; DB role now ADMIN.
+- NOT VERIFIED: `GET /api/admin/access` as ADMIN, disabled-account 403 and logout — the agent cannot use the user's browser session. Account was not disabled.
