@@ -74,3 +74,12 @@ The remaining sequence is:
 3. Perform a real Clerk test-account sign-in (no fake users, no bypass).
 4. Run the full Phase 2 end-to-end verification (user mapping, USER/ADMIN/disabled authorization, logout/session).
 5. If Phase 2 passes, update PROJECT-STATUS.md + checkpoint and STOP — Phase 3 starts only on explicit owner approval.
+
+## Disabled-account investigation (2026-10-04)
+
+- Report: after a manual Neon SQL `status=DISABLED`, `/api/auth/me` still returned ACTIVE.
+- Code audit: no path sets `users.status` except the insert default for new users; `resolveLocalUser` updates only email/displayName/timestamps; no triggers on `users`; no webhooks/jobs.
+- DB target: the running API and the agent use the same `DATABASE_URL` (Neon pooled endpoint `ep-small-moon-…`, database `neondb`).
+- Reproduction: agent set the test row to DISABLED; it stayed DISABLED (re-read after 8 s), then was restored to ACTIVE. Nothing reverts it.
+- Probable cause: the manual UPDATE ran against a different Neon branch/endpoint than the one in `DATABASE_URL`. No code change made. Tests 15/15 PASS.
+- Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED.

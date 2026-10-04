@@ -55,3 +55,12 @@ has signed in yet (0 users). Phase 2 is NOT marked VERIFIED. Phase 3 not started
 - PASS: `GET /api/auth/me` returned 200 with the local user (role USER) in the preview's own session; email claim present.
 - PASS: `promote-admin` run for this account; DB role now ADMIN.
 - NOT VERIFIED: `GET /api/admin/access` as ADMIN, disabled-account 403 and logout — the agent cannot use the user's browser session. Account was not disabled.
+
+## Disabled-account investigation (2026-10-04)
+
+- Report: after a manual Neon SQL `status=DISABLED`, `/api/auth/me` still returned ACTIVE.
+- Code audit: no path sets `users.status` except the insert default for new users; `resolveLocalUser` updates only email/displayName/timestamps; no triggers on `users`; no webhooks/jobs.
+- DB target: the running API and the agent use the same `DATABASE_URL` (Neon pooled endpoint `ep-small-moon-…`, database `neondb`).
+- Reproduction: agent set the test row to DISABLED; it stayed DISABLED (re-read after 8 s), then was restored to ACTIVE. Nothing reverts it.
+- Probable cause: the manual UPDATE ran against a different Neon branch/endpoint than the one in `DATABASE_URL`. No code change made. Tests 15/15 PASS.
+- Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED.
