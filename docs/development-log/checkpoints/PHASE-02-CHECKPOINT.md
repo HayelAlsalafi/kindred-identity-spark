@@ -1,6 +1,6 @@
 # Phase 2 Checkpoint — Authentication, Users, Roles, Authorization
 
-**Date:** 2026-10-01 · **Status:** COMPLETE in code + tests; live sign-in, user mapping and authorization not yet verified (blocked by `DATABASE_URL` and the session `email` claim; Clerk keys configured).
+**Date:** 2026-10-01 · **Status:** VERIFIED (2026-10-04) — see "Final End-to-End Verification" below.
 
 ## Already present when the project was imported (Replit)
 
@@ -47,14 +47,14 @@ PROJECT-STATUS.md.
 15/15 tests, migrations + seed on Neon, API startup, public endpoints 200, protected
 endpoints 401 without/invalid session. NOT TESTED: live Clerk sign-in, live email claim,
 `clerk_user_id` mapping, live USER/ADMIN/disabled checks, logout — no real test account
-has signed in yet (0 users). Phase 2 is NOT marked VERIFIED. Phase 3 not started.
+has signed in yet (0 users). Phase 2 was NOT marked VERIFIED at that time (superseded 2026-10-04). Phase 3 not started.
 
 ## Live check (2026-10-03, after real Clerk sign-in)
 
 - PASS: real Clerk test user signed in; one `users` row created lazily with a Clerk `user_…` id in `clerk_user_id`, role USER, status ACTIVE (first-time creation + mapping).
 - PASS: `GET /api/auth/me` returned 200 with the local user (role USER) in the preview's own session; email claim present.
 - PASS: `promote-admin` run for this account; DB role now ADMIN.
-- NOT VERIFIED: `GET /api/admin/access` as ADMIN, disabled-account 403 and logout — the agent cannot use the user's browser session. Account was not disabled.
+- NOT VERIFIED on 2026-10-03 (PASS on 2026-10-04): `GET /api/admin/access` as ADMIN, disabled-account 403 and logout — the agent cannot use the user's browser session. Account was not disabled.
 
 ## Disabled-account investigation (2026-10-04)
 
@@ -63,4 +63,24 @@ has signed in yet (0 users). Phase 2 is NOT marked VERIFIED. Phase 3 not started
 - DB target: the running API and the agent use the same `DATABASE_URL` (Neon pooled endpoint `ep-small-moon-…`, database `neondb`).
 - Reproduction: agent set the test row to DISABLED; it stayed DISABLED (re-read after 8 s), then was restored to ACTIVE. Nothing reverts it.
 - Probable cause: the manual UPDATE ran against a different Neon branch/endpoint than the one in `DATABASE_URL`. No code change made. Tests 15/15 PASS.
-- Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED.
+- Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED at that time (superseded 2026-10-04: VERIFIED).
+
+## Final End-to-End Verification (2026-10-04)
+
+**Phase 2 is VERIFIED. Phase 3 has not started.**
+
+| Check | Result |
+| --- | --- |
+| Clerk authentication (real test account sign-in) | PASS |
+| Local user provisioning (Clerk id → `users.clerk_user_id`, created as USER/ACTIVE) | PASS |
+| PostgreSQL role/status enforcement (role/status read from DB, not token) | PASS |
+| ADMIN authorization (`promote-admin`, then `/api/admin/access` → `{"allowed":true,"role":"ADMIN"}`) | PASS |
+| DISABLED account rejection (ADMIN + DISABLED, live session → `/api/auth/me` 403 `ACCOUNT_DISABLED`); account restored to ACTIVE | PASS |
+| Logout → `/api/auth/me` 401 `UNAUTHENTICATED` | PASS |
+| Automated auth/authz tests | PASS — 15/15 |
+
+The disabled-account check first appeared inconsistent because the manual SQL update was run
+against a different Neon database/endpoint than the application `DATABASE_URL`. This was
+investigated and confirmed; no application bug was found and no code changed. The test was
+then repeated on the correct endpoint and passed. No load testing or production-readiness
+assessment has been performed.
