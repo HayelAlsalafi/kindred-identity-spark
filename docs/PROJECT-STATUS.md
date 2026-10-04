@@ -38,7 +38,7 @@ Values are never recorded here.
 | Secret absent from frontend bundle | PASS (2026-10-02) |
 | Real Clerk sign-in, mapping, first-time creation, `/api/auth/me` as USER | PASS (live, 2026-10-03) |
 | `promote-admin` on real account | PASS (role ADMIN) |
-| Live `/api/admin/access` as ADMIN, disabled 403, logout | NOT VERIFIED |
+| Live `/api/admin/access` as ADMIN, disabled 403, logout | NOT VERIFIED on 2026-10-03; PASS on 2026-10-04 (see Final End-to-End Verification) |
 | Session `email` claim (live token) | NOT TESTED live (requires real sign-in) |
 | Clerk user → `users.clerk_user_id` mapping, first-time creation | NOT TESTED live (unit tests PASS) |
 | USER / ADMIN / disabled-account authorization (live) | NOT TESTED live (unit tests PASS) |
@@ -114,7 +114,7 @@ Clerk keys are configured and verified (frontend init, backend config, secret se
 - DB target: the running API and the agent use the same `DATABASE_URL` (Neon pooled endpoint `ep-small-moon-…`, database `neondb`).
 - Reproduction: agent set the test row to DISABLED; it stayed DISABLED (re-read after 8 s), then was restored to ACTIVE. Nothing reverts it.
 - Probable cause: the manual UPDATE ran against a different Neon branch/endpoint than the one in `DATABASE_URL`. No code change made. Tests 15/15 PASS.
-- Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED.
+- Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED at that time (superseded 2026-10-04: VERIFIED).
 
 ## Final End-to-End Verification (2026-10-04)
 
