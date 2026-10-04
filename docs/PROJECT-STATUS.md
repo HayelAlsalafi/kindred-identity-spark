@@ -2,13 +2,13 @@
 
 - **Name:** CCNA Learning SaaS
 - **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-03 (Phase 2 verification run; no code changes)
+- **Last updated:** 2026-10-04 (Phase 2 VERIFIED; documentation only)
 
 | Phase | Status |
 | --- | --- |
 | Phase 0 — Architecture | COMPLETE |
 | Phase 1 — Foundation | COMPLETE |
-| Phase 2 — Auth, users, roles, authorization | COMPLETE (code + tests + DB + API); NOT FULLY VERIFIED — live Clerk sign-in pending |
+| Phase 2 — Auth, users, roles, authorization | VERIFIED (2026-10-04) |
 | Phase 3 — Topics & question management | NOT STARTED (awaiting approval) |
 
 ## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
@@ -44,7 +44,7 @@ Values are never recorded here.
 | USER / ADMIN / disabled-account authorization (live) | NOT TESTED live (unit tests PASS) |
 | Logout/session behaviour | NOT TESTED |
 
-## Current blockers
+## Blockers (historical — resolved 2026-10-04)
 
 1. A real person must sign in once with a real Clerk test account in the preview (no fake users created by the agent).
 2. Then promote that account with `promote-admin` for the ADMIN check, and temporarily set `status='DISABLED'` for the disabled-account check.
@@ -97,7 +97,7 @@ PORT, BASE_PATH  (supplied by the dev scripts/workflow)
 
 No load, performance or production-readiness testing has been done.
 
-## Next exact step (as of 2026-10-03)
+## Next exact step (as of 2026-10-03) — superseded: Phase 2 VERIFIED 2026-10-04; next step is owner approval for Phase 3
 
 Clerk keys are configured and verified (frontend init, backend config, secret server-only — PASS). Remaining sequence:
 
@@ -115,3 +115,23 @@ Clerk keys are configured and verified (frontend init, backend config, secret se
 - Reproduction: agent set the test row to DISABLED; it stayed DISABLED (re-read after 8 s), then was restored to ACTIVE. Nothing reverts it.
 - Probable cause: the manual UPDATE ran against a different Neon branch/endpoint than the one in `DATABASE_URL`. No code change made. Tests 15/15 PASS.
 - Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED.
+
+## Final End-to-End Verification (2026-10-04)
+
+**Phase 2 is VERIFIED. Phase 3 has not started.**
+
+| Check | Result |
+| --- | --- |
+| Clerk authentication (real test account sign-in) | PASS |
+| Local user provisioning (Clerk id → `users.clerk_user_id`, created as USER/ACTIVE) | PASS |
+| PostgreSQL role/status enforcement (role/status read from DB, not token) | PASS |
+| ADMIN authorization (`promote-admin`, then `/api/admin/access` → `{"allowed":true,"role":"ADMIN"}`) | PASS |
+| DISABLED account rejection (ADMIN + DISABLED, live session → `/api/auth/me` 403 `ACCOUNT_DISABLED`); account restored to ACTIVE | PASS |
+| Logout → `/api/auth/me` 401 `UNAUTHENTICATED` | PASS |
+| Automated auth/authz tests | PASS — 15/15 |
+
+The disabled-account check first appeared inconsistent because the manual SQL update was run
+against a different Neon database/endpoint than the application `DATABASE_URL`. This was
+investigated and confirmed; no application bug was found and no code changed. The test was
+then repeated on the correct endpoint and passed. No load testing or production-readiness
+assessment has been performed.

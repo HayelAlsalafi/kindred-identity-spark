@@ -1,6 +1,6 @@
 # Phase 2 Checkpoint — Authentication, Users, Roles, Authorization
 
-**Date:** 2026-10-01 · **Status:** COMPLETE in code + tests; live sign-in, user mapping and authorization not yet verified (blocked by `DATABASE_URL` and the session `email` claim; Clerk keys configured).
+**Date:** 2026-10-01 · **Status:** VERIFIED (2026-10-04) — see "Final End-to-End Verification" below.
 
 ## Already present when the project was imported (Replit)
 
@@ -64,3 +64,23 @@ has signed in yet (0 users). Phase 2 is NOT marked VERIFIED. Phase 3 not started
 - Reproduction: agent set the test row to DISABLED; it stayed DISABLED (re-read after 8 s), then was restored to ACTIVE. Nothing reverts it.
 - Probable cause: the manual UPDATE ran against a different Neon branch/endpoint than the one in `DATABASE_URL`. No code change made. Tests 15/15 PASS.
 - Live disabled 403 and logout 401: NOT VERIFIED (need the user's browser session). Phase 2 NOT VERIFIED.
+
+## Final End-to-End Verification (2026-10-04)
+
+**Phase 2 is VERIFIED. Phase 3 has not started.**
+
+| Check | Result |
+| --- | --- |
+| Clerk authentication (real test account sign-in) | PASS |
+| Local user provisioning (Clerk id → `users.clerk_user_id`, created as USER/ACTIVE) | PASS |
+| PostgreSQL role/status enforcement (role/status read from DB, not token) | PASS |
+| ADMIN authorization (`promote-admin`, then `/api/admin/access` → `{"allowed":true,"role":"ADMIN"}`) | PASS |
+| DISABLED account rejection (ADMIN + DISABLED, live session → `/api/auth/me` 403 `ACCOUNT_DISABLED`); account restored to ACTIVE | PASS |
+| Logout → `/api/auth/me` 401 `UNAUTHENTICATED` | PASS |
+| Automated auth/authz tests | PASS — 15/15 |
+
+The disabled-account check first appeared inconsistent because the manual SQL update was run
+against a different Neon database/endpoint than the application `DATABASE_URL`. This was
+investigated and confirmed; no application bug was found and no code changed. The test was
+then repeated on the correct endpoint and passed. No load testing or production-readiness
+assessment has been performed.
