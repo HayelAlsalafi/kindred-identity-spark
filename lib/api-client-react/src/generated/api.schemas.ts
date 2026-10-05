@@ -5,6 +5,38 @@
  * CCNA Learning SaaS API foundation
  * OpenAPI spec version: 0.2.0
  */
+export type LearnerQuestionType = typeof LearnerQuestionType[keyof typeof LearnerQuestionType];
+
+
+export const LearnerQuestionType = {
+  MULTIPLE_CHOICE_SINGLE: 'MULTIPLE_CHOICE_SINGLE',
+} as const;
+
+export type LearnerQuestionDifficulty = typeof LearnerQuestionDifficulty[keyof typeof LearnerQuestionDifficulty];
+
+
+export const LearnerQuestionDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+} as const;
+
+export type LearnerQuestionOptionsItem = {
+  optionKey: string;
+  text: string;
+};
+
+export interface LearnerQuestion {
+  id: string;
+  questionCode: string;
+  topicId: string;
+  text: string;
+  type: LearnerQuestionType;
+  difficulty: LearnerQuestionDifficulty;
+  imageKey: string | null;
+  options: LearnerQuestionOptionsItem[];
+}
+
 export interface HealthStatus {
   status: string;
 }

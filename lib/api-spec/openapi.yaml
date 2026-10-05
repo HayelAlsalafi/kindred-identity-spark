@@ -112,6 +112,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /questions/{id}:
+    get:
+      operationId: getQuestion
+      tags: [questions]
+      summary: Get an active question for learners
+      description: Returns an ACTIVE question in an ACTIVE topic. Disabled questions return 404. Correct answers are never included.
+      security:
+        - clerkSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Learner question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnerQuestion"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account is disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question not found or not active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     clerkSession:
@@ -120,6 +160,39 @@ components:
       name: __session
       description: Clerk's same-origin session cookie; login and logout are managed by Clerk UI.
   schemas:
+    LearnerQuestion:
+      type: object
+      required: [id, questionCode, topicId, text, type, difficulty, imageKey, options]
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionCode:
+          type: string
+        topicId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        type:
+          type: string
+          enum: [MULTIPLE_CHOICE_SINGLE]
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        imageKey:
+          type: string
+          nullable: true
+        options:
+          type: array
+          items:
+            type: object
+            required: [optionKey, text]
+            properties:
+              optionKey:
+                type: string
+              text:
+                type: string
     HealthStatus:
       type: object
       properties:

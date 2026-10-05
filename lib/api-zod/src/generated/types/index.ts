@@ -16,4 +16,8 @@ export * from './dashboardSummary';
 export * from './errorResponse';
 export * from './errorResponseError';
 export * from './healthStatus';
+export * from './learnerQuestion';
+export * from './learnerQuestionDifficulty';
+export * from './learnerQuestionOptionsItem';
+export * from './learnerQuestionType';
 export * from './topicSummary';

@@ -21,6 +21,7 @@ import type {
   DashboardSummary,
   ErrorResponse,
   HealthStatus,
+  LearnerQuestion,
   TopicSummary
 } from './api.schemas';
 
@@ -429,6 +430,84 @@ export function useGetAdminAccess<TData = Awaited<ReturnType<typeof getAdminAcce
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAdminAccessQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQuestionUrl = (id: string,) => {
+
+
+
+
+  return `/api/questions/${id}`
+}
+
+/**
+ * Returns an ACTIVE question in an ACTIVE topic. Disabled questions return 404. Correct answers are never included.
+ * @summary Get an active question for learners
+ */
+export const getQuestion = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<LearnerQuestion> => {
+
+  return customFetch<LearnerQuestion>(getGetQuestionUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuestionQueryKey = (id: string,) => {
+    return [
+    `/api/questions/${id}`
+    ] as const;
+    }
+
+
+export const getGetQuestionQueryOptions = <TData = Awaited<ReturnType<typeof getQuestion>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuestion>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuestionQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuestion>>> = ({ signal }) => getQuestion(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuestion>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuestionQueryResult = NonNullable<Awaited<ReturnType<typeof getQuestion>>>
+export type GetQuestionQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get an active question for learners
+ */
+
+export function useGetQuestion<TData = Awaited<ReturnType<typeof getQuestion>>, TError = ErrorType<ErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuestion>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuestionQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

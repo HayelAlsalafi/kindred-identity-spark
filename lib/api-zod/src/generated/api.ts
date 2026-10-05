@@ -137,3 +137,26 @@ export const GetAdminAccessResponse = zod.object({
 })
 
 
+/**
+ * Returns an ACTIVE question in an ACTIVE topic. Disabled questions return 404. Correct answers are never included.
+ * @summary Get an active question for learners
+ */
+export const GetQuestionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetQuestionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "questionCode": zod.string(),
+  "topicId": zod.string().uuid(),
+  "text": zod.string(),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "imageKey": zod.string().nullable(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string(),
+  "text": zod.string()
+}))
+})
+
+
