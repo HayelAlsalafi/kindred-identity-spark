@@ -67,3 +67,4 @@
 - `public_id` لا يتغير عند تعديل question.
 - لا hard delete لسؤال له attempts؛ يستخدم `DISABLED`.
 - حذف topic مسموح فقط عندما لا توجد questions مرتبطة، أو يتحول إلى disabled حسب policy.
+> Phase 3A (2026-10-05): `questions` and `question_options` are now implemented with Phase 3A field names/enums (EASY/MEDIUM/HARD, `question_code`, `image_key`). See `development-log/checkpoints/PHASE-03A-CHECKPOINT.md`; the planned sections below are superseded for those tables.
