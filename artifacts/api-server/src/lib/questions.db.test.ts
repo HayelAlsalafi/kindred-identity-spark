@@ -57,8 +57,9 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
     await inRollback(async (tx) => {
       const t = await makeTopic(tx);
       const a = await createQuestion(input(t.id), tx);
+      await tx.execute(sql`savepoint s1`);
       await expect(
-        tx.execute(sql`savepoint s1; insert into questions (question_code, topic_id, text, difficulty)
+        tx.execute(sql`insert into questions (question_code, topic_id, text, difficulty)
           values (${a.question.questionCode}, ${t.id}, 'x', 'EASY')`),
       ).rejects.toThrow();
       await tx.execute(sql`rollback to savepoint s1`);
