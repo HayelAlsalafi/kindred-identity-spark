@@ -9,7 +9,7 @@
 | Phase 0 — Architecture | COMPLETE |
 | Phase 1 — Foundation | COMPLETE |
 | Phase 2 — Auth, users, roles, authorization | VERIFIED (2026-10-04) |
-| Phase 3 — Topics & question management | NOT STARTED (awaiting approval) |
+| Phase 3 — Topics & question management | IN PROGRESS — Phase 3A COMPLETE (2026-10-05); 3B+ not started |
 
 ## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
 
@@ -135,3 +135,9 @@ against a different Neon database/endpoint than the application `DATABASE_URL`. 
 investigated and confirmed; no application bug was found and no code changed. The test was
 then repeated on the correct endpoint and passed. No load testing or production-readiness
 assessment has been performed.
+
+## Phase 3A — Question Domain Foundation (2026-10-05)
+
+COMPLETE for Phase 3A only (schema, migrations, validation, learner read endpoint, tests). Phase 3 is NOT complete;
+Phase 3B (admin topic/question management) and later phases have NOT started and await approval.
+Details: `development-log/checkpoints/PHASE-03A-CHECKPOINT.md`. DB tests run with `RUN_DB_TESTS=1`.

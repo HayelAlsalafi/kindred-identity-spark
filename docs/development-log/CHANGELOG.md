@@ -79,3 +79,7 @@
 
 - لا توجد تطبيقات أو اختبارات قابلة للتشغيل حتى الآن.
 - قرارات ADR ما زالت Proposed وتحتاج اعتمادًا قبل Phase 1.
+## 2026-10-05 — Phase 3A — Question Domain Foundation
+- Added `questions`, `question_options`, question enums, DB-generated immutable `question_code`.
+- Migrations 0001, 0002. Domain validation + `createQuestion` service. `GET /api/questions/{id}` (learner, authenticated).
+- Tests: 28 total (15 existing + 13 new). See PHASE-03A-CHECKPOINT.md.
