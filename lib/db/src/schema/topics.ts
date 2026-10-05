@@ -46,3 +46,30 @@ export const insertTopicSchema = createInsertSchema(topicsTable).omit({
 
 export type InsertTopic = z.infer<typeof insertTopicSchema>;
 export type Topic = typeof topicsTable.$inferSelect;
+
+/** Phase 3B-1: admin topic input validation (server-side). */
+const slugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2)
+  .max(120)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, digits and single hyphens.");
+
+export const createTopicInputSchema = z.strictObject({
+  slug: slugSchema,
+  name: z.string().trim().min(1).max(180),
+  description: z.string().trim().max(2000).default(""),
+  displayOrder: z.number().int().min(0).max(100000).default(0),
+  status: z.enum(topicStatusEnum.enumValues).default("ACTIVE"),
+});
+
+export const updateTopicInputSchema = z
+  .strictObject({
+    slug: slugSchema.optional(),
+    name: z.string().trim().min(1).max(180).optional(),
+    description: z.string().trim().max(2000).optional(),
+    displayOrder: z.number().int().min(0).max(100000).optional(),
+    status: z.enum(topicStatusEnum.enumValues).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "At least one field is required." });
