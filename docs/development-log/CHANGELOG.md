@@ -83,3 +83,7 @@
 - Added `questions`, `question_options`, question enums, DB-generated immutable `question_code`.
 - Migrations 0001, 0002. Domain validation + `createQuestion` service. `GET /api/questions/{id}` (learner, authenticated).
 - Tests: 28 total (15 existing + 13 new). See PHASE-03A-CHECKPOINT.md.
+
+## 2026-10-05 — Phase 3B-1 — Topic Management API
+- ADMIN-only `GET/POST /api/admin/topics`, `PATCH /api/admin/topics/{id}`, `POST /api/admin/topics/{id}/disable`.
+- 21 new tests; 49/49 total pass.

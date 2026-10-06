@@ -8,6 +8,12 @@
 
 export * from './adminAccessResponse';
 export * from './adminAccessResponseRole';
+export * from './adminTopic';
+export * from './adminTopicCreate';
+export * from './adminTopicCreateStatus';
+export * from './adminTopicStatus';
+export * from './adminTopicUpdate';
+export * from './adminTopicUpdateStatus';
 export * from './currentUser';
 export * from './currentUserResponse';
 export * from './currentUserRole';

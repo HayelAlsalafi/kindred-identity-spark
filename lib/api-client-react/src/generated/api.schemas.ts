@@ -5,6 +5,90 @@
  * CCNA Learning SaaS API foundation
  * OpenAPI spec version: 0.2.0
  */
+export type AdminTopicStatus = typeof AdminTopicStatus[keyof typeof AdminTopicStatus];
+
+
+export const AdminTopicStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface AdminTopic {
+  id: string;
+  /**
+     * @minLength 2
+     * @maxLength 120
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  name: string;
+  /** @maxLength 2000 */
+  description: string;
+  /** @minimum 0 */
+  displayOrder: number;
+  status: AdminTopicStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AdminTopicCreateStatus = typeof AdminTopicCreateStatus[keyof typeof AdminTopicCreateStatus];
+
+
+export const AdminTopicCreateStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface AdminTopicCreate {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  name: string;
+  /** @maxLength 2000 */
+  description?: string;
+  /** @minimum 0 */
+  displayOrder?: number;
+  status?: AdminTopicCreateStatus;
+}
+
+export type AdminTopicUpdateStatus = typeof AdminTopicUpdateStatus[keyof typeof AdminTopicUpdateStatus];
+
+
+export const AdminTopicUpdateStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface AdminTopicUpdate {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug?: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  name?: string;
+  /** @maxLength 2000 */
+  description?: string;
+  /** @minimum 0 */
+  displayOrder?: number;
+  status?: AdminTopicUpdateStatus;
+}
+
 export type LearnerQuestionType = typeof LearnerQuestionType[keyof typeof LearnerQuestionType];
 
 

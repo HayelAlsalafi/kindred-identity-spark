@@ -109,3 +109,8 @@ assessment has been performed.
 COMPLETE for Phase 3A only (schema, migrations, validation, learner read endpoint, tests). Phase 3 is NOT complete;
 Phase 3B (admin topic/question management) and later phases have NOT started and await approval.
 Details: `development-log/checkpoints/PHASE-03A-CHECKPOINT.md`. DB tests run with `RUN_DB_TESTS=1`.
+
+## Phase 3B-1 — Topic Management API (2026-10-05)
+
+COMPLETE (admin topic list/create/update/disable API only). Question management, UI, practice, attempts and
+statistics NOT started. Details: `development-log/checkpoints/PHASE-03B1-CHECKPOINT.md`.

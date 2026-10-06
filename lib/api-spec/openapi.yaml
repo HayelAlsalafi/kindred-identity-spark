@@ -152,6 +152,173 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/topics:
+    get:
+      operationId: adminListTopics
+      tags: [admin]
+      summary: List all topics including disabled (ADMIN)
+      security:
+        - clerkSession: []
+      responses:
+        "200":
+          description: All topics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminTopic"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: adminCreateTopic
+      tags: [admin]
+      summary: Create a topic (ADMIN)
+      security:
+        - clerkSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTopicCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTopic"
+        "400":
+          description: Invalid topic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/topics/{id}:
+    patch:
+      operationId: adminUpdateTopic
+      tags: [admin]
+      summary: Update a topic (ADMIN)
+      security:
+        - clerkSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTopicUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTopic"
+        "400":
+          description: Invalid topic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Topic not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/topics/{id}/disable:
+    post:
+      operationId: adminDisableTopic
+      tags: [admin]
+      summary: Disable a topic (kept in database) (ADMIN)
+      security:
+        - clerkSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTopic"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Topic not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     clerkSession:
@@ -160,6 +327,83 @@ components:
       name: __session
       description: Clerk's same-origin session cookie; login and logout are managed by Clerk UI.
   schemas:
+    AdminTopic:
+      type: object
+      required: [id, slug, name, description, displayOrder, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          minLength: 2
+          maxLength: 120
+        name:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          type: string
+          maxLength: 2000
+        displayOrder:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AdminTopicCreate:
+      type: object
+      additionalProperties: false
+      required: [slug, name]
+      properties:
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          minLength: 2
+          maxLength: 120
+        name:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          type: string
+          maxLength: 2000
+        displayOrder:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+    AdminTopicUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          minLength: 2
+          maxLength: 120
+        name:
+          type: string
+          minLength: 1
+          maxLength: 180
+        description:
+          type: string
+          maxLength: 2000
+        displayOrder:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
     LearnerQuestion:
       type: object
       required: [id, questionCode, topicId, text, type, difficulty, imageKey, options]

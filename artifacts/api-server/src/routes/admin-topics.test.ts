@@ -82,6 +82,8 @@ const topic = { id: "11111111-1111-4111-8111-111111111111", slug: "routing", nam
 const req = (method: string, path: string, body?: unknown) =>
   fetch(base + path, { method, headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const j = async (r: Response): Promise<any> => r.json();
 beforeEach(() => Object.values(svc).forEach((f) => f.mockReset()));
 
 describe("admin topic API authorization", () => {
@@ -95,19 +97,19 @@ describe("admin topic API authorization", () => {
     signIn(null);
     const r = await req(m, p, b);
     expect(r.status).toBe(401);
-    expect((await r.json()).error.code).toBe("UNAUTHENTICATED");
+    expect((await j(r)).error.code).toBe("UNAUTHENTICATED");
   });
   it.each(routes)("%s %s → 403 FORBIDDEN for USER", async (m, p, b) => {
     signIn("USER");
     const r = await req(m, p, b);
     expect(r.status).toBe(403);
-    expect((await r.json()).error.code).toBe("FORBIDDEN");
+    expect((await j(r)).error.code).toBe("FORBIDDEN");
   });
   it("403 ACCOUNT_DISABLED for a disabled ADMIN", async () => {
     signIn("ADMIN", "DISABLED");
     const r = await req("GET", "/admin/topics");
     expect(r.status).toBe(403);
-    expect((await r.json()).error.code).toBe("ACCOUNT_DISABLED");
+    expect((await j(r)).error.code).toBe("ACCOUNT_DISABLED");
   });
   it("service is never reached for non-admins", () => {
     expect(svc.listAllTopics).not.toHaveBeenCalled();
@@ -121,7 +123,7 @@ describe("admin topic API (ADMIN)", () => {
     svc.listAllTopics.mockResolvedValue([topic, { ...topic, id: "2", status: "DISABLED" }]);
     const r = await req("GET", "/admin/topics");
     expect(r.status).toBe(200);
-    expect((await r.json()).map((t: { status: string }) => t.status)).toEqual(["ACTIVE", "DISABLED"]);
+    expect((await j(r)).map((t: { status: string }) => t.status)).toEqual(["ACTIVE", "DISABLED"]);
   });
   it("creates → 201", async () => {
     svc.createTopic.mockResolvedValue(topic);
@@ -139,10 +141,10 @@ describe("admin topic API (ADMIN)", () => {
   });
   it("updates and disables", async () => {
     svc.updateTopic.mockResolvedValue({ ...topic, name: "New" });
-    expect((await (await req("PATCH", `/admin/topics/${topic.id}`, { name: "New" })).json()).name).toBe("New");
+    expect((await j(await req("PATCH", `/admin/topics/${topic.id}`, { name: "New" }))).name).toBe("New");
     svc.disableTopic.mockResolvedValue({ ...topic, status: "DISABLED" });
     const r = await req("POST", `/admin/topics/${topic.id}/disable`);
-    expect((await r.json()).status).toBe("DISABLED");
+    expect((await j(r)).status).toBe("DISABLED");
   });
   it("non-uuid id → 404 without calling the service", async () => {
     const r = await req("POST", "/admin/topics/not-a-uuid/disable");
