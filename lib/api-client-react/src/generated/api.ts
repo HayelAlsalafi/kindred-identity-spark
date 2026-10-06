@@ -6,17 +6,24 @@
  * OpenAPI spec version: 0.2.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   AdminAccessResponse,
+  AdminTopic,
+  AdminTopicCreate,
+  AdminTopicUpdate,
   CurrentUserResponse,
   DashboardSummary,
   ErrorResponse,
@@ -26,7 +33,7 @@ import type {
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType } from '../custom-fetch';
+import type { ErrorType , BodyType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -519,4 +526,332 @@ export function useGetQuestion<TData = Awaited<ReturnType<typeof getQuestion>>, 
 
 
 
+
+export const getAdminListTopicsUrl = () => {
+
+
+
+
+  return `/api/admin/topics`
+}
+
+/**
+ * @summary List all topics including disabled (ADMIN)
+ */
+export const adminListTopics = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminTopic[]> => {
+
+  return customFetch<AdminTopic[]>(getAdminListTopicsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListTopicsQueryKey = () => {
+    return [
+    `/api/admin/topics`
+    ] as const;
+    }
+
+
+export const getAdminListTopicsQueryOptions = <TData = Awaited<ReturnType<typeof adminListTopics>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListTopics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListTopicsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListTopics>>> = ({ signal }) => adminListTopics({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListTopics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListTopicsQueryResult = NonNullable<Awaited<ReturnType<typeof adminListTopics>>>
+export type AdminListTopicsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List all topics including disabled (ADMIN)
+ */
+
+export function useAdminListTopics<TData = Awaited<ReturnType<typeof adminListTopics>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListTopics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListTopicsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAdminCreateTopicUrl = () => {
+
+
+
+
+  return `/api/admin/topics`
+}
+
+/**
+ * @summary Create a topic (ADMIN)
+ */
+export const adminCreateTopic = async (adminTopicCreate: AdminTopicCreate, options?: Parameters<typeof customFetch>[1]): Promise<AdminTopic> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminTopic>(getAdminCreateTopicUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminTopicCreate)
+  }
+);}
+
+
+
+
+
+export const getAdminCreateTopicMutationKey = () => ['adminCreateTopic'] as const;
+
+export const getAdminCreateTopicMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminCreateTopic>>, TError,AdminCreateTopicMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminCreateTopic>>, TError,AdminCreateTopicMutationVariables, TContext> => {
+
+const mutationKey = getAdminCreateTopicMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminCreateTopic>>, AdminCreateTopicMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  adminCreateTopic(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminCreateTopicMutationResult = NonNullable<Awaited<ReturnType<typeof adminCreateTopic>>>
+    export type AdminCreateTopicMutationBody = BodyType<AdminTopicCreate>
+    export type AdminCreateTopicMutationError = ErrorType<ErrorResponse>
+    export type AdminCreateTopicMutationVariables = {data: BodyType<AdminTopicCreate>}
+
+    /**
+ * @summary Create a topic (ADMIN)
+ */
+export const useAdminCreateTopic = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminCreateTopic>>, TError,AdminCreateTopicMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminCreateTopic>>,
+        TError,
+        AdminCreateTopicMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdminCreateTopicMutationOptions(options));
+    }
+
+export const getAdminUpdateTopicUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/topics/${id}`
+}
+
+/**
+ * @summary Update a topic (ADMIN)
+ */
+export const adminUpdateTopic = async (id: string,
+    adminTopicUpdate: AdminTopicUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminTopic> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminTopic>(getAdminUpdateTopicUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminTopicUpdate)
+  }
+);}
+
+
+
+
+
+export const getAdminUpdateTopicMutationKey = () => ['adminUpdateTopic'] as const;
+
+export const getAdminUpdateTopicMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdateTopic>>, TError,AdminUpdateTopicMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminUpdateTopic>>, TError,AdminUpdateTopicMutationVariables, TContext> => {
+
+const mutationKey = getAdminUpdateTopicMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUpdateTopic>>, AdminUpdateTopicMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  adminUpdateTopic(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminUpdateTopicMutationResult = NonNullable<Awaited<ReturnType<typeof adminUpdateTopic>>>
+    export type AdminUpdateTopicMutationBody = BodyType<AdminTopicUpdate>
+    export type AdminUpdateTopicMutationError = ErrorType<ErrorResponse>
+    export type AdminUpdateTopicMutationVariables = {id: string;data: BodyType<AdminTopicUpdate>}
+
+    /**
+ * @summary Update a topic (ADMIN)
+ */
+export const useAdminUpdateTopic = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdateTopic>>, TError,AdminUpdateTopicMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminUpdateTopic>>,
+        TError,
+        AdminUpdateTopicMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdminUpdateTopicMutationOptions(options));
+    }
+
+export const getAdminDisableTopicUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/topics/${id}/disable`
+}
+
+/**
+ * @summary Disable a topic (kept in database) (ADMIN)
+ */
+export const adminDisableTopic = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminTopic> => {
+
+  return customFetch<AdminTopic>(getAdminDisableTopicUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminDisableTopicMutationKey = () => ['adminDisableTopic'] as const;
+
+export const getAdminDisableTopicMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDisableTopic>>, TError,AdminDisableTopicMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDisableTopic>>, TError,AdminDisableTopicMutationVariables, TContext> => {
+
+const mutationKey = getAdminDisableTopicMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDisableTopic>>, AdminDisableTopicMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  adminDisableTopic(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDisableTopicMutationResult = NonNullable<Awaited<ReturnType<typeof adminDisableTopic>>>
+
+    export type AdminDisableTopicMutationError = ErrorType<ErrorResponse>
+    export type AdminDisableTopicMutationVariables = {id: string}
+
+    /**
+ * @summary Disable a topic (kept in database) (ADMIN)
+ */
+export const useAdminDisableTopic = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDisableTopic>>, TError,AdminDisableTopicMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDisableTopic>>,
+        TError,
+        AdminDisableTopicMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdminDisableTopicMutationOptions(options));
+    }
 

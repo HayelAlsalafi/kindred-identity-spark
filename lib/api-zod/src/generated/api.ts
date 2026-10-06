@@ -160,3 +160,166 @@ export const GetQuestionResponse = zod.object({
 })
 
 
+/**
+ * @summary List all topics including disabled (ADMIN)
+ */
+export const adminListTopicsResponseSlugMin = 2;
+export const adminListTopicsResponseSlugMax = 120;
+
+
+export const adminListTopicsResponseSlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const adminListTopicsResponseNameMax = 180;
+
+export const adminListTopicsResponseDescriptionMax = 2000;
+
+export const adminListTopicsResponseDisplayOrderMin = 0;
+
+
+
+export const AdminListTopicsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "slug": zod.string().min(adminListTopicsResponseSlugMin).max(adminListTopicsResponseSlugMax).regex(adminListTopicsResponseSlugRegExp),
+  "name": zod.string().min(1).max(adminListTopicsResponseNameMax),
+  "description": zod.string().max(adminListTopicsResponseDescriptionMax),
+  "displayOrder": zod.number().int().min(adminListTopicsResponseDisplayOrderMin),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const AdminListTopicsResponse = zod.array(AdminListTopicsResponseItem)
+
+
+/**
+ * @summary Create a topic (ADMIN)
+ */
+export const adminCreateTopicBodySlugMin = 2;
+export const adminCreateTopicBodySlugMax = 120;
+
+
+export const adminCreateTopicBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const adminCreateTopicBodyNameMax = 180;
+
+export const adminCreateTopicBodyDescriptionMax = 2000;
+
+export const adminCreateTopicBodyDisplayOrderMin = 0;
+
+
+
+export const AdminCreateTopicBody = zod.object({
+  "slug": zod.string().min(adminCreateTopicBodySlugMin).max(adminCreateTopicBodySlugMax).regex(adminCreateTopicBodySlugRegExp),
+  "name": zod.string().min(1).max(adminCreateTopicBodyNameMax),
+  "description": zod.string().max(adminCreateTopicBodyDescriptionMax).optional(),
+  "displayOrder": zod.number().int().min(adminCreateTopicBodyDisplayOrderMin).optional(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']).optional()
+})
+
+export const adminCreateTopicResponseSlugMin = 2;
+export const adminCreateTopicResponseSlugMax = 120;
+
+
+export const adminCreateTopicResponseSlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const adminCreateTopicResponseNameMax = 180;
+
+export const adminCreateTopicResponseDescriptionMax = 2000;
+
+export const adminCreateTopicResponseDisplayOrderMin = 0;
+
+
+
+export const AdminCreateTopicResponse = zod.object({
+  "id": zod.string().uuid(),
+  "slug": zod.string().min(adminCreateTopicResponseSlugMin).max(adminCreateTopicResponseSlugMax).regex(adminCreateTopicResponseSlugRegExp),
+  "name": zod.string().min(1).max(adminCreateTopicResponseNameMax),
+  "description": zod.string().max(adminCreateTopicResponseDescriptionMax),
+  "displayOrder": zod.number().int().min(adminCreateTopicResponseDisplayOrderMin),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a topic (ADMIN)
+ */
+export const AdminUpdateTopicParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const adminUpdateTopicBodySlugMin = 2;
+export const adminUpdateTopicBodySlugMax = 120;
+
+
+export const adminUpdateTopicBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const adminUpdateTopicBodyNameMax = 180;
+
+export const adminUpdateTopicBodyDescriptionMax = 2000;
+
+export const adminUpdateTopicBodyDisplayOrderMin = 0;
+
+
+
+export const AdminUpdateTopicBody = zod.object({
+  "slug": zod.string().min(adminUpdateTopicBodySlugMin).max(adminUpdateTopicBodySlugMax).regex(adminUpdateTopicBodySlugRegExp).optional(),
+  "name": zod.string().min(1).max(adminUpdateTopicBodyNameMax).optional(),
+  "description": zod.string().max(adminUpdateTopicBodyDescriptionMax).optional(),
+  "displayOrder": zod.number().int().min(adminUpdateTopicBodyDisplayOrderMin).optional(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']).optional()
+})
+
+export const adminUpdateTopicResponseSlugMin = 2;
+export const adminUpdateTopicResponseSlugMax = 120;
+
+
+export const adminUpdateTopicResponseSlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const adminUpdateTopicResponseNameMax = 180;
+
+export const adminUpdateTopicResponseDescriptionMax = 2000;
+
+export const adminUpdateTopicResponseDisplayOrderMin = 0;
+
+
+
+export const AdminUpdateTopicResponse = zod.object({
+  "id": zod.string().uuid(),
+  "slug": zod.string().min(adminUpdateTopicResponseSlugMin).max(adminUpdateTopicResponseSlugMax).regex(adminUpdateTopicResponseSlugRegExp),
+  "name": zod.string().min(1).max(adminUpdateTopicResponseNameMax),
+  "description": zod.string().max(adminUpdateTopicResponseDescriptionMax),
+  "displayOrder": zod.number().int().min(adminUpdateTopicResponseDisplayOrderMin),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Disable a topic (kept in database) (ADMIN)
+ */
+export const AdminDisableTopicParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const adminDisableTopicResponseSlugMin = 2;
+export const adminDisableTopicResponseSlugMax = 120;
+
+
+export const adminDisableTopicResponseSlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const adminDisableTopicResponseNameMax = 180;
+
+export const adminDisableTopicResponseDescriptionMax = 2000;
+
+export const adminDisableTopicResponseDisplayOrderMin = 0;
+
+
+
+export const AdminDisableTopicResponse = zod.object({
+  "id": zod.string().uuid(),
+  "slug": zod.string().min(adminDisableTopicResponseSlugMin).max(adminDisableTopicResponseSlugMax).regex(adminDisableTopicResponseSlugRegExp),
+  "name": zod.string().min(1).max(adminDisableTopicResponseNameMax),
+  "description": zod.string().max(adminDisableTopicResponseDescriptionMax),
+  "displayOrder": zod.number().int().min(adminDisableTopicResponseDisplayOrderMin),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
