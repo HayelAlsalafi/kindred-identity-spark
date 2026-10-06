@@ -84,40 +84,69 @@ export const questionOptionsTable = pgTable(
 export type Question = typeof questionsTable.$inferSelect;
 export type QuestionOption = typeof questionOptionsTable.$inferSelect;
 
-/** Server-side domain validation for creating a question with its options. */
-const optionInput = z.object({
+/** Server-side domain validation for a question option. */
+export const questionOptionInputSchema = z.object({
   optionKey: z.string().trim().min(1).max(8),
-  text: z.string().trim().min(1),
+  text: z.string().trim().min(1).max(4000),
   isCorrect: z.boolean(),
-});
+}).strict();
+
+function validateQuestionOptions(
+  options: { optionKey: string; isCorrect: boolean }[],
+  ctx: z.RefinementCtx,
+) {
+  const keys = new Set(options.map((o) => o.optionKey.toUpperCase()));
+  if (keys.size !== options.length) {
+    ctx.addIssue({ code: "custom", path: ["options"], message: "Option keys must be unique." });
+  }
+  const correct = options.filter((o) => o.isCorrect).length;
+  if (correct !== 1) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["options"],
+      message: "MULTIPLE_CHOICE_SINGLE requires exactly one correct option.",
+    });
+  }
+}
 
 export const createQuestionInputSchema = z
   .object({
     topicId: z.uuid(),
-    text: z.string().trim().min(1),
+    text: z.string().trim().min(1).max(10_000),
     type: z.enum(questionTypeEnum.enumValues),
     difficulty: z.enum(questionDifficultyEnum.enumValues),
-    explanation: z.string().trim().default(""),
+    explanation: z.string().trim().max(10_000).default(""),
     imageKey: z.string().trim().max(512).nullable().default(null),
-    referenceNotes: z.string().trim().nullable().default(null),
+    referenceNotes: z.string().trim().max(10_000).nullable().default(null),
     status: z.enum(questionStatusEnum.enumValues).default("ACTIVE"),
-    options: z.array(optionInput).min(2).max(10),
+    options: z.array(questionOptionInputSchema).min(2).max(10),
   })
+  .strict()
   .superRefine((q, ctx) => {
-    const keys = new Set(q.options.map((o) => o.optionKey.toUpperCase()));
-    if (keys.size !== q.options.length) {
-      ctx.addIssue({ code: "custom", path: ["options"], message: "Option keys must be unique." });
-    }
-    if (q.type === "MULTIPLE_CHOICE_SINGLE") {
-      const correct = q.options.filter((o) => o.isCorrect).length;
-      if (correct !== 1) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["options"],
-          message: "MULTIPLE_CHOICE_SINGLE requires exactly one correct option.",
-        });
-      }
-    }
+    validateQuestionOptions(q.options, ctx);
   });
 
 export type CreateQuestionInput = z.infer<typeof createQuestionInputSchema>;
+
+/** Partial update schema; questionCode is intentionally not an accepted field. */
+export const updateQuestionInputSchema = z
+  .object({
+    topicId: z.uuid().optional(),
+    text: z.string().trim().min(1).max(10_000).optional(),
+    type: z.enum(questionTypeEnum.enumValues).optional(),
+    difficulty: z.enum(questionDifficultyEnum.enumValues).optional(),
+    explanation: z.string().trim().max(10_000).optional(),
+    imageKey: z.string().trim().max(512).nullable().optional(),
+    referenceNotes: z.string().trim().max(10_000).nullable().optional(),
+    status: z.enum(questionStatusEnum.enumValues).optional(),
+    options: z.array(questionOptionInputSchema).min(2).max(10).optional(),
+  })
+  .strict()
+  .superRefine((q, ctx) => {
+    if (Object.keys(q).length === 0) {
+      ctx.addIssue({ code: "custom", message: "At least one field must be provided." });
+    }
+    if (q.options) validateQuestionOptions(q.options, ctx);
+  });
+
+export type UpdateQuestionInput = z.infer<typeof updateQuestionInputSchema>;

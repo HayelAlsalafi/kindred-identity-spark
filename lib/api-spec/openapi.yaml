@@ -319,6 +319,195 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /admin/questions:
+    get:
+      operationId: adminListQuestions
+      tags: [admin]
+      summary: List questions with pagination and filters (ADMIN)
+      security:
+        - clerkSession: []
+      parameters:
+        - name: topicId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, DISABLED]
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [EASY, MEDIUM, HARD]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1000000
+            default: 0
+      responses:
+        "200":
+          description: Paginated questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminQuestionListResponse"
+        "400":
+          description: Invalid filter or pagination value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: adminCreateQuestion
+      tags: [admin]
+      summary: Create a single-correct multiple-choice question (ADMIN)
+      security:
+        - clerkSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminQuestionCreate"
+      responses:
+        "201":
+          description: Created with a database-generated immutable question code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminQuestion"
+        "400":
+          description: Invalid question or topic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/questions/{id}:
+    patch:
+      operationId: adminUpdateQuestion
+      tags: [admin]
+      summary: Update a question and optionally replace its options (ADMIN)
+      security:
+        - clerkSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminQuestionUpdate"
+      responses:
+        "200":
+          description: Updated; question code is unchanged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminQuestion"
+        "400":
+          description: Invalid question or topic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/questions/{id}/disable:
+    post:
+      operationId: adminDisableQuestion
+      tags: [admin]
+      summary: Disable a question without deleting it (ADMIN)
+      security:
+        - clerkSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Disabled question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminQuestion"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an administrator or account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     clerkSession:
@@ -404,6 +593,195 @@ components:
         status:
           type: string
           enum: [ACTIVE, DISABLED]
+    AdminQuestionOption:
+      type: object
+      additionalProperties: false
+      required: [optionKey, displayOrder, text, isCorrect]
+      properties:
+        optionKey:
+          type: string
+          minLength: 1
+          maxLength: 8
+        displayOrder:
+          type: integer
+          minimum: 0
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        isCorrect:
+          type: boolean
+    AdminQuestion:
+      type: object
+      additionalProperties: false
+      required: [id, questionCode, topicId, text, type, difficulty, explanation, imageKey, referenceNotes, status, createdAt, updatedAt, options]
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionCode:
+          type: string
+          pattern: "^CCNA-Q-[0-9]{6,}$"
+          readOnly: true
+        topicId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        type:
+          type: string
+          enum: [MULTIPLE_CHOICE_SINGLE]
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        explanation:
+          type: string
+          maxLength: 10000
+        imageKey:
+          type: string
+          maxLength: 512
+          nullable: true
+        referenceNotes:
+          type: string
+          maxLength: 10000
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminQuestionOption"
+    AdminQuestionListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminQuestion"
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+    AdminQuestionCreate:
+      type: object
+      additionalProperties: false
+      required: [topicId, text, type, difficulty, options]
+      properties:
+        topicId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        type:
+          type: string
+          enum: [MULTIPLE_CHOICE_SINGLE]
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        explanation:
+          type: string
+          maxLength: 10000
+        imageKey:
+          type: string
+          maxLength: 512
+          nullable: true
+        referenceNotes:
+          type: string
+          maxLength: 10000
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+        options:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            type: object
+            additionalProperties: false
+            required: [optionKey, text, isCorrect]
+            properties:
+              optionKey:
+                type: string
+                minLength: 1
+                maxLength: 8
+              text:
+                type: string
+                minLength: 1
+                maxLength: 4000
+              isCorrect:
+                type: boolean
+    AdminQuestionUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        topicId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        type:
+          type: string
+          enum: [MULTIPLE_CHOICE_SINGLE]
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        explanation:
+          type: string
+          maxLength: 10000
+        imageKey:
+          type: string
+          maxLength: 512
+          nullable: true
+        referenceNotes:
+          type: string
+          maxLength: 10000
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+        options:
+          type: array
+          minItems: 2
+          maxItems: 10
+          description: When supplied, replaces the whole option list and must contain exactly one correct option.
+          items:
+            type: object
+            additionalProperties: false
+            required: [optionKey, text, isCorrect]
+            properties:
+              optionKey:
+                type: string
+                minLength: 1
+                maxLength: 8
+              text:
+                type: string
+                minLength: 1
+                maxLength: 4000
+              isCorrect:
+                type: boolean
     LearnerQuestion:
       type: object
       required: [id, questionCode, topicId, text, type, difficulty, imageKey, options]

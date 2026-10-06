@@ -4,6 +4,7 @@ import learningRouter from "./learning";
 import authRouter from "./auth";
 import questionsRouter from "./questions";
 import adminTopicsRouter from "./admin-topics";
+import adminQuestionsRouter from "./admin-questions";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(learningRouter);
 router.use(authRouter);
 router.use(questionsRouter);
 router.use(adminTopicsRouter);
+router.use(adminQuestionsRouter);
 
 export default router;
