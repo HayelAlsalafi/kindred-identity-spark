@@ -37,8 +37,10 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
-      - name: API tests
-        run: pnpm --filter @workspace/api-server test
+      # DB integration suites intentionally require RUN_DB_TESTS=1 and a
+      # DATABASE_URL. CI does not expose the production Neon database to PRs.
+      - name: API tests (non-DB)
+        run: pnpm --filter @workspace/api-server exec vitest run --exclude '**/*.db.test.ts'
 
       - name: Build
         run: pnpm -r --if-present run build
