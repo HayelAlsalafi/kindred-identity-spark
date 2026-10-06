@@ -9,7 +9,7 @@
 | Phase 0 — Architecture | COMPLETE |
 | Phase 1 — Foundation | COMPLETE |
 | Phase 2 — Auth, users, roles, authorization | VERIFIED (2026-10-04) |
-| Phase 3 — Topics & question management | IN PROGRESS — Phase 3A COMPLETE (2026-10-05); 3B+ not started |
+| Phase 3 — Topics & question management | IN PROGRESS — 3A, 3B-1 COMPLETE (2026-10-05); rest not started |
 
 ## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
 
@@ -141,3 +141,8 @@ assessment has been performed.
 COMPLETE for Phase 3A only (schema, migrations, validation, learner read endpoint, tests). Phase 3 is NOT complete;
 Phase 3B (admin topic/question management) and later phases have NOT started and await approval.
 Details: `development-log/checkpoints/PHASE-03A-CHECKPOINT.md`. DB tests run with `RUN_DB_TESTS=1`.
+
+## Phase 3B-1 — Topic Management API (2026-10-05)
+
+COMPLETE (admin topic list/create/update/disable API only). Question management, UI, practice, attempts and
+statistics NOT started. Details: `development-log/checkpoints/PHASE-03B1-CHECKPOINT.md`.
