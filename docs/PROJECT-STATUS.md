@@ -2,14 +2,14 @@
 
 - **Name:** CCNA Learning SaaS
 - **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-04 (Phase 2 VERIFIED; documentation only)
+- **Last updated:** 2026-10-06 (Phase 3B-2 implementation present; full verification pending)
 
 | Phase | Status |
 | --- | --- |
 | Phase 0 — Architecture | COMPLETE |
 | Phase 1 — Foundation | COMPLETE |
 | Phase 2 — Auth, users, roles, authorization | VERIFIED (2026-10-04) |
-| Phase 3 — Topics & question management | IN PROGRESS — 3A, 3B-1 COMPLETE (2026-10-05); rest not started |
+| Phase 3 — Topics & question management | IN PROGRESS — 3A, 3B-1 COMPLETE; 3B-2 UI present, full verification pending |
 
 ## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
 
@@ -146,3 +146,19 @@ Details: `development-log/checkpoints/PHASE-03A-CHECKPOINT.md`. DB tests run wit
 
 COMPLETE (admin topic list/create/update/disable API only). Question management, UI, practice, attempts and
 statistics NOT started. Details: `development-log/checkpoints/PHASE-03B1-CHECKPOINT.md`.
+
+## Phase 3B-2 — Admin Topic Management UI (2026-10-06)
+
+Implementation present by code inspection: the ADMIN page lists ACTIVE and DISABLED topics and
+supports topic creation, editing, and confirmed disabling through the existing admin topic APIs.
+The page and server API enforce ADMIN access. Loading, success, validation, and error states are
+present. No schema changes were made for this phase.
+
+| Check | Result |
+| --- | --- |
+| Frontend production build | PASS |
+| Full verification | PENDING |
+| API tests | NOT RUN — dependency installation was blocked by the Replit package firewall (HTTP 403 for `proxy-addr@2.0.7`) |
+| Full project typecheck | NOT COMPLETED — Replit's Node/pnpm versions do not match the versions declared by the project |
+
+Details: `development-log/checkpoints/PHASE-03B2-CHECKPOINT.md`.
