@@ -42,5 +42,5 @@ jobs:
       - name: API tests (non-DB)
         run: pnpm --filter @workspace/api-server exec vitest run --exclude '**/*.db.test.ts'
 
-      - name: Build
-        run: pnpm -r --if-present run build
+      - name: Build production application
+        run: pnpm --filter @workspace/api-server run build && PORT=8080 BASE_PATH=/ pnpm --filter @workspace/ccna-learning run build
