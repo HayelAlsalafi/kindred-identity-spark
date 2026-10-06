@@ -9,6 +9,7 @@ import { useGetAdminAccess, useGetCurrentUser, useHealthCheck, useListTopics, us
 import type { CurrentUser, TopicSummary } from '@workspace/api-client-react';
 import { Link, Redirect, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { AdminTopicManager } from '@/components/admin-topics';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -531,18 +532,9 @@ function AdminPage() {
 
   return (
     <div className="page-wrap">
-      <PageHeader eyebrow="Boundary / ADMIN verified" title="The admin boundary is ready." lead="Your account passed Clerk authentication and the server-side ADMIN policy. Content management is intentionally deferred to Phase 3." />
-      <section className="admin-boundary">
-        <div className="admin-message reveal reveal-1">
-          <ShieldCheck color="var(--teal)" size={23} />
-          <h2>Access boundary held.</h2>
-          <p>There are no admin actions exposed in this Phase 2 build. Topic and question authoring, account controls, and operational tools remain outside this phase.</p>
-          <Link href="/" className="button-primary" data-testid="link-return-dashboard"><ArrowRight size={15} style={{ transform: 'rotate(180deg)' }} /> Return to overview</Link>
-        </div>
-        <div className="boundary-mark reveal reveal-2" aria-label="Admin tools placeholder" data-testid="panel-admin-placeholder">
-          <div className="boundary-diagram" aria-hidden="true"><span className="orbit-dot one" /><span className="orbit-dot two" /><span className="orbit-dot three" /><div className="boundary-circle"><div className="boundary-core"><LockKeyhole /></div></div></div>
-        </div>
-      </section>
+      <PageHeader eyebrow="Admin / topic management" title="Manage topics." lead="Create, edit and disable curriculum topics. Every action is re-checked by the server-side ADMIN policy." />
+      <AdminTopicManager />
+
     </div>
   );
 }
