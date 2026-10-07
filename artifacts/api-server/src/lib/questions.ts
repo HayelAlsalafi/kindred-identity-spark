@@ -16,8 +16,7 @@ export class QuestionValidationError extends Error {
 }
 
 /**
- * Phase 3A domain service: validates and creates a question with its options
- * in one transaction. Not exposed over HTTP yet (admin CRUD is a later phase).
+ * Validates and creates a question with its options in one transaction.
  */
 export async function createQuestion(input: unknown, db: Db = defaultDb) {
   const parsed = createQuestionInputSchema.safeParse(input);

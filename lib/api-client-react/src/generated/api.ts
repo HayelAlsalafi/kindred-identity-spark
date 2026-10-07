@@ -21,6 +21,11 @@ import type {
 
 import type {
   AdminAccessResponse,
+  AdminListQuestionsParams,
+  AdminQuestion,
+  AdminQuestionCreate,
+  AdminQuestionListResponse,
+  AdminQuestionUpdate,
   AdminTopic,
   AdminTopicCreate,
   AdminTopicUpdate,
@@ -853,5 +858,340 @@ export const useAdminDisableTopic = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getAdminDisableTopicMutationOptions(options));
+    }
+
+export const getAdminListQuestionsUrl = (params?: AdminListQuestionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/questions?${stringifiedParams}` : `/api/admin/questions`
+}
+
+/**
+ * @summary List questions with pagination and filters (ADMIN)
+ */
+export const adminListQuestions = async (params?: AdminListQuestionsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminQuestionListResponse> => {
+
+  return customFetch<AdminQuestionListResponse>(getAdminListQuestionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListQuestionsQueryKey = (params?: AdminListQuestionsParams,) => {
+    return [
+    `/api/admin/questions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminListQuestionsQueryOptions = <TData = Awaited<ReturnType<typeof adminListQuestions>>, TError = ErrorType<ErrorResponse>>(params?: AdminListQuestionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListQuestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListQuestionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListQuestions>>> = ({ signal }) => adminListQuestions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListQuestions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListQuestionsQueryResult = NonNullable<Awaited<ReturnType<typeof adminListQuestions>>>
+export type AdminListQuestionsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List questions with pagination and filters (ADMIN)
+ */
+
+export function useAdminListQuestions<TData = Awaited<ReturnType<typeof adminListQuestions>>, TError = ErrorType<ErrorResponse>>(
+ params?: AdminListQuestionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListQuestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListQuestionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAdminCreateQuestionUrl = () => {
+
+
+
+
+  return `/api/admin/questions`
+}
+
+/**
+ * @summary Create a single-correct multiple-choice question (ADMIN)
+ */
+export const adminCreateQuestion = async (adminQuestionCreate: AdminQuestionCreate, options?: Parameters<typeof customFetch>[1]): Promise<AdminQuestion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminQuestion>(getAdminCreateQuestionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminQuestionCreate)
+  }
+);}
+
+
+
+
+
+export const getAdminCreateQuestionMutationKey = () => ['adminCreateQuestion'] as const;
+
+export const getAdminCreateQuestionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminCreateQuestion>>, TError,AdminCreateQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminCreateQuestion>>, TError,AdminCreateQuestionMutationVariables, TContext> => {
+
+const mutationKey = getAdminCreateQuestionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminCreateQuestion>>, AdminCreateQuestionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  adminCreateQuestion(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminCreateQuestionMutationResult = NonNullable<Awaited<ReturnType<typeof adminCreateQuestion>>>
+    export type AdminCreateQuestionMutationBody = BodyType<AdminQuestionCreate>
+    export type AdminCreateQuestionMutationError = ErrorType<ErrorResponse>
+    export type AdminCreateQuestionMutationVariables = {data: BodyType<AdminQuestionCreate>}
+
+    /**
+ * @summary Create a single-correct multiple-choice question (ADMIN)
+ */
+export const useAdminCreateQuestion = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminCreateQuestion>>, TError,AdminCreateQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminCreateQuestion>>,
+        TError,
+        AdminCreateQuestionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdminCreateQuestionMutationOptions(options));
+    }
+
+export const getAdminUpdateQuestionUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/questions/${id}`
+}
+
+/**
+ * @summary Update a question and optionally replace its options (ADMIN)
+ */
+export const adminUpdateQuestion = async (id: string,
+    adminQuestionUpdate: AdminQuestionUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminQuestion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminQuestion>(getAdminUpdateQuestionUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminQuestionUpdate)
+  }
+);}
+
+
+
+
+
+export const getAdminUpdateQuestionMutationKey = () => ['adminUpdateQuestion'] as const;
+
+export const getAdminUpdateQuestionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdateQuestion>>, TError,AdminUpdateQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminUpdateQuestion>>, TError,AdminUpdateQuestionMutationVariables, TContext> => {
+
+const mutationKey = getAdminUpdateQuestionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUpdateQuestion>>, AdminUpdateQuestionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  adminUpdateQuestion(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminUpdateQuestionMutationResult = NonNullable<Awaited<ReturnType<typeof adminUpdateQuestion>>>
+    export type AdminUpdateQuestionMutationBody = BodyType<AdminQuestionUpdate>
+    export type AdminUpdateQuestionMutationError = ErrorType<ErrorResponse>
+    export type AdminUpdateQuestionMutationVariables = {id: string;data: BodyType<AdminQuestionUpdate>}
+
+    /**
+ * @summary Update a question and optionally replace its options (ADMIN)
+ */
+export const useAdminUpdateQuestion = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdateQuestion>>, TError,AdminUpdateQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminUpdateQuestion>>,
+        TError,
+        AdminUpdateQuestionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdminUpdateQuestionMutationOptions(options));
+    }
+
+export const getAdminDisableQuestionUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/questions/${id}/disable`
+}
+
+/**
+ * @summary Disable a question without deleting it (ADMIN)
+ */
+export const adminDisableQuestion = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminQuestion> => {
+
+  return customFetch<AdminQuestion>(getAdminDisableQuestionUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminDisableQuestionMutationKey = () => ['adminDisableQuestion'] as const;
+
+export const getAdminDisableQuestionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDisableQuestion>>, TError,AdminDisableQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDisableQuestion>>, TError,AdminDisableQuestionMutationVariables, TContext> => {
+
+const mutationKey = getAdminDisableQuestionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDisableQuestion>>, AdminDisableQuestionMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  adminDisableQuestion(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDisableQuestionMutationResult = NonNullable<Awaited<ReturnType<typeof adminDisableQuestion>>>
+
+    export type AdminDisableQuestionMutationError = ErrorType<ErrorResponse>
+    export type AdminDisableQuestionMutationVariables = {id: string}
+
+    /**
+ * @summary Disable a question without deleting it (ADMIN)
+ */
+export const useAdminDisableQuestion = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDisableQuestion>>, TError,AdminDisableQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDisableQuestion>>,
+        TError,
+        AdminDisableQuestionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdminDisableQuestionMutationOptions(options));
     }
 
