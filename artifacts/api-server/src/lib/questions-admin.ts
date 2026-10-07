@@ -13,7 +13,7 @@ import {
   updateQuestionInputSchema,
   type UpdateQuestionInput,
 } from "@workspace/db/schema";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { createQuestion, QuestionValidationError } from "./questions";
 
 type Db = typeof defaultDb;
@@ -31,7 +31,7 @@ export class AdminQuestionError extends Error {
 
 const queryInteger = (fallback: number, min: number, max: number) =>
   z.preprocess(
-    (value) => {
+    (value: unknown) => {
       if (value === undefined) return fallback;
       if (typeof value === "string" && value.trim() !== "") return Number(value);
       return value;
@@ -59,7 +59,7 @@ export function parseAdminQuestionListQuery(input: unknown): AdminQuestionListQu
   const result = adminQuestionListQuerySchema.safeParse(input);
   if (!result.success) {
     throw validationError(
-      result.error.issues.map((issue) => ({
+      result.error.issues.map((issue: { path: PropertyKey[]; message: string }) => ({
         path: issue.path.map(String).join("."),
         message: issue.message,
       })),
