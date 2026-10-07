@@ -41,7 +41,7 @@ const queryInteger = (fallback: number, min: number, max: number) =>
 
 export const adminQuestionListQuerySchema = z
   .object({
-    topicId: z.uuid().optional(),
+    topicId: z.string().uuid().optional(),
     status: z.enum(questionStatusEnum.enumValues).optional(),
     difficulty: z.enum(questionDifficultyEnum.enumValues).optional(),
     limit: queryInteger(25, 1, 100),
