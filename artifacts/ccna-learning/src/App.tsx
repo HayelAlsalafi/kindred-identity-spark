@@ -10,6 +10,7 @@ import type { CurrentUser, TopicSummary } from '@workspace/api-client-react';
 import { Link, Redirect, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AdminTopicManager } from '@/components/admin-topics';
+import { AdminQuestionManager } from '@/components/admin-questions';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -439,6 +440,8 @@ function SignUpPage() {
 }
 
 function AdminPage() {
+  const [location] = useLocation();
+  const questionsPage = location === '/admin/questions';
   const { isLoaded, isSignedIn } = useAuth();
   const currentUserQuery = useGetCurrentUser({
     query: {
@@ -532,8 +535,17 @@ function AdminPage() {
 
   return (
     <div className="page-wrap">
-      <PageHeader eyebrow="Admin / topic management" title="Manage topics." lead="Create, edit and disable curriculum topics. Every action is re-checked by the server-side ADMIN policy." />
-      <AdminTopicManager />
+      <PageHeader
+        eyebrow={questionsPage ? 'Admin / question management' : 'Admin / topic management'}
+        title={questionsPage ? 'Manage questions.' : 'Manage topics.'}
+        lead={questionsPage
+          ? 'Create, edit, filter and disable single-answer multiple-choice questions. The server verifies every action.'
+          : 'Create, edit and disable curriculum topics. Every action is re-checked by the server-side ADMIN policy.'}
+        action={questionsPage
+          ? <Link href="/admin" className="button-primary" data-testid="link-admin-topics">Manage topics <ArrowRight size={15} /></Link>
+          : <Link href="/admin/questions" className="button-primary" data-testid="link-admin-questions">Manage questions <ArrowRight size={15} /></Link>}
+      />
+      {questionsPage ? <AdminQuestionManager /> : <AdminTopicManager />}
 
     </div>
   );
@@ -570,6 +582,7 @@ function Router() {
         <Route path="/"><SharedShell><Dashboard /></SharedShell></Route>
         <Route path="/topics"><SharedShell><TopicsPage /></SharedShell></Route>
         <Route path="/practice"><SharedShell><PracticePage /></SharedShell></Route>
+        <Route path="/admin/questions"><SharedShell><AdminPage /></SharedShell></Route>
         <Route path="/admin"><SharedShell><AdminPage /></SharedShell></Route>
         <Route><NotFound /></Route>
       </Switch>
