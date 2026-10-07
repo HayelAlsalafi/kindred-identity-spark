@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createQuestionInputSchema } from "@workspace/db/schema";
+import { createQuestionInputSchema, updateQuestionInputSchema } from "@workspace/db/schema";
 
 const base = {
   topicId: "f38bb39f-90a0-4528-8696-97a4bb83da6e",
@@ -42,5 +42,24 @@ describe("question domain validation (Phase 3A)", () => {
     expect(createQuestionInputSchema.safeParse({ ...base, options: [base.options[1]] }).success).toBe(false);
     const dup = [base.options[0], { ...base.options[1], optionKey: "a" }];
     expect(createQuestionInputSchema.safeParse({ ...base, options: dup }).success).toBe(false);
+  });
+  it("rejects unknown fields, including attempts to provide an immutable question code", () => {
+    expect(createQuestionInputSchema.safeParse({ ...base, questionCode: "CCNA-Q-999999" }).success).toBe(false);
+  });
+  it("enforces the server-side question text limit", () => {
+    expect(createQuestionInputSchema.safeParse({ ...base, text: "x".repeat(10_001) }).success).toBe(false);
+  });
+  it("accepts partial updates and rejects empty or immutable-code updates", () => {
+    expect(updateQuestionInputSchema.parse({ text: "  Updated text  " }).text).toBe("Updated text");
+    expect(updateQuestionInputSchema.safeParse({}).success).toBe(false);
+    expect(updateQuestionInputSchema.safeParse({ questionCode: "CCNA-Q-999999" }).success).toBe(false);
+  });
+  it("validates replacement options for unique keys and exactly one correct answer", () => {
+    const good = updateQuestionInputSchema.safeParse({ options: base.options });
+    const noneCorrect = base.options.map((option) => ({ ...option, isCorrect: false }));
+    const duplicateKeys = [base.options[0], { ...base.options[1], optionKey: "a" }];
+    expect(good.success).toBe(true);
+    expect(updateQuestionInputSchema.safeParse({ options: noneCorrect }).success).toBe(false);
+    expect(updateQuestionInputSchema.safeParse({ options: duplicateKeys }).success).toBe(false);
   });
 });

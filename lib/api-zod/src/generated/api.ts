@@ -323,3 +323,273 @@ export const AdminDisableTopicResponse = zod.object({
 })
 
 
+/**
+ * @summary List questions with pagination and filters (ADMIN)
+ */
+export const adminListQuestionsQueryLimitDefault = 25;
+export const adminListQuestionsQueryLimitMax = 100;
+
+export const adminListQuestionsQueryOffsetDefault = 0;
+export const adminListQuestionsQueryOffsetMin = 0;
+export const adminListQuestionsQueryOffsetMax = 1000000;
+
+
+
+export const AdminListQuestionsQueryParams = zod.object({
+  "topicId": zod.coerce.string().uuid().optional(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']).optional(),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
+  "limit": zod.coerce.number().int().min(1).max(adminListQuestionsQueryLimitMax).default(adminListQuestionsQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(adminListQuestionsQueryOffsetMin).max(adminListQuestionsQueryOffsetMax).default(adminListQuestionsQueryOffsetDefault)
+})
+
+export const adminListQuestionsResponseItemsItemQuestionCodeRegExp = new RegExp('^CCNA-Q-[0-9]{6,}$');
+export const adminListQuestionsResponseItemsItemTextMax = 10000;
+
+export const adminListQuestionsResponseItemsItemExplanationMax = 10000;
+
+export const adminListQuestionsResponseItemsItemImageKeyMax = 512;
+
+export const adminListQuestionsResponseItemsItemReferenceNotesMax = 10000;
+
+export const adminListQuestionsResponseItemsItemOptionsItemOptionKeyMax = 8;
+
+export const adminListQuestionsResponseItemsItemOptionsItemDisplayOrderMin = 0;
+
+export const adminListQuestionsResponseItemsItemOptionsItemTextMax = 4000;
+
+export const adminListQuestionsResponseTotalMin = 0;
+
+export const adminListQuestionsResponseLimitMax = 100;
+
+export const adminListQuestionsResponseOffsetMin = 0;
+
+
+
+export const AdminListQuestionsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "questionCode": zod.string().regex(adminListQuestionsResponseItemsItemQuestionCodeRegExp),
+  "topicId": zod.string().uuid(),
+  "text": zod.string().min(1).max(adminListQuestionsResponseItemsItemTextMax),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "explanation": zod.string().max(adminListQuestionsResponseItemsItemExplanationMax),
+  "imageKey": zod.string().max(adminListQuestionsResponseItemsItemImageKeyMax).nullable(),
+  "referenceNotes": zod.string().max(adminListQuestionsResponseItemsItemReferenceNotesMax).nullable(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string().min(1).max(adminListQuestionsResponseItemsItemOptionsItemOptionKeyMax),
+  "displayOrder": zod.number().int().min(adminListQuestionsResponseItemsItemOptionsItemDisplayOrderMin),
+  "text": zod.string().min(1).max(adminListQuestionsResponseItemsItemOptionsItemTextMax),
+  "isCorrect": zod.boolean()
+}))
+})),
+  "total": zod.number().int().min(adminListQuestionsResponseTotalMin),
+  "limit": zod.number().int().min(1).max(adminListQuestionsResponseLimitMax),
+  "offset": zod.number().int().min(adminListQuestionsResponseOffsetMin)
+})
+
+
+/**
+ * @summary Create a single-correct multiple-choice question (ADMIN)
+ */
+export const adminCreateQuestionBodyTextMax = 10000;
+
+export const adminCreateQuestionBodyExplanationMax = 10000;
+
+export const adminCreateQuestionBodyImageKeyMax = 512;
+
+export const adminCreateQuestionBodyReferenceNotesMax = 10000;
+
+export const adminCreateQuestionBodyOptionsItemOptionKeyMax = 8;
+
+export const adminCreateQuestionBodyOptionsItemTextMax = 4000;
+
+export const adminCreateQuestionBodyOptionsMin = 2;
+export const adminCreateQuestionBodyOptionsMax = 10;
+
+
+
+export const AdminCreateQuestionBody = zod.object({
+  "topicId": zod.string().uuid(),
+  "text": zod.string().min(1).max(adminCreateQuestionBodyTextMax),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "explanation": zod.string().max(adminCreateQuestionBodyExplanationMax).optional(),
+  "imageKey": zod.string().max(adminCreateQuestionBodyImageKeyMax).nullish(),
+  "referenceNotes": zod.string().max(adminCreateQuestionBodyReferenceNotesMax).nullish(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']).optional(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string().min(1).max(adminCreateQuestionBodyOptionsItemOptionKeyMax),
+  "text": zod.string().min(1).max(adminCreateQuestionBodyOptionsItemTextMax),
+  "isCorrect": zod.boolean()
+})).min(adminCreateQuestionBodyOptionsMin).max(adminCreateQuestionBodyOptionsMax)
+})
+
+export const adminCreateQuestionResponseQuestionCodeRegExp = new RegExp('^CCNA-Q-[0-9]{6,}$');
+export const adminCreateQuestionResponseTextMax = 10000;
+
+export const adminCreateQuestionResponseExplanationMax = 10000;
+
+export const adminCreateQuestionResponseImageKeyMax = 512;
+
+export const adminCreateQuestionResponseReferenceNotesMax = 10000;
+
+export const adminCreateQuestionResponseOptionsItemOptionKeyMax = 8;
+
+export const adminCreateQuestionResponseOptionsItemDisplayOrderMin = 0;
+
+export const adminCreateQuestionResponseOptionsItemTextMax = 4000;
+
+
+
+export const AdminCreateQuestionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "questionCode": zod.string().regex(adminCreateQuestionResponseQuestionCodeRegExp),
+  "topicId": zod.string().uuid(),
+  "text": zod.string().min(1).max(adminCreateQuestionResponseTextMax),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "explanation": zod.string().max(adminCreateQuestionResponseExplanationMax),
+  "imageKey": zod.string().max(adminCreateQuestionResponseImageKeyMax).nullable(),
+  "referenceNotes": zod.string().max(adminCreateQuestionResponseReferenceNotesMax).nullable(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string().min(1).max(adminCreateQuestionResponseOptionsItemOptionKeyMax),
+  "displayOrder": zod.number().int().min(adminCreateQuestionResponseOptionsItemDisplayOrderMin),
+  "text": zod.string().min(1).max(adminCreateQuestionResponseOptionsItemTextMax),
+  "isCorrect": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Update a question and optionally replace its options (ADMIN)
+ */
+export const AdminUpdateQuestionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const adminUpdateQuestionBodyTextMax = 10000;
+
+export const adminUpdateQuestionBodyExplanationMax = 10000;
+
+export const adminUpdateQuestionBodyImageKeyMax = 512;
+
+export const adminUpdateQuestionBodyReferenceNotesMax = 10000;
+
+export const adminUpdateQuestionBodyOptionsItemOptionKeyMax = 8;
+
+export const adminUpdateQuestionBodyOptionsItemTextMax = 4000;
+
+export const adminUpdateQuestionBodyOptionsMin = 2;
+export const adminUpdateQuestionBodyOptionsMax = 10;
+
+
+
+export const AdminUpdateQuestionBody = zod.object({
+  "topicId": zod.string().uuid().optional(),
+  "text": zod.string().min(1).max(adminUpdateQuestionBodyTextMax).optional(),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']).optional(),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
+  "explanation": zod.string().max(adminUpdateQuestionBodyExplanationMax).optional(),
+  "imageKey": zod.string().max(adminUpdateQuestionBodyImageKeyMax).nullish(),
+  "referenceNotes": zod.string().max(adminUpdateQuestionBodyReferenceNotesMax).nullish(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']).optional(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string().min(1).max(adminUpdateQuestionBodyOptionsItemOptionKeyMax),
+  "text": zod.string().min(1).max(adminUpdateQuestionBodyOptionsItemTextMax),
+  "isCorrect": zod.boolean()
+})).min(adminUpdateQuestionBodyOptionsMin).max(adminUpdateQuestionBodyOptionsMax).optional().describe('When supplied, replaces the whole option list and must contain exactly one correct option.')
+})
+
+export const adminUpdateQuestionResponseQuestionCodeRegExp = new RegExp('^CCNA-Q-[0-9]{6,}$');
+export const adminUpdateQuestionResponseTextMax = 10000;
+
+export const adminUpdateQuestionResponseExplanationMax = 10000;
+
+export const adminUpdateQuestionResponseImageKeyMax = 512;
+
+export const adminUpdateQuestionResponseReferenceNotesMax = 10000;
+
+export const adminUpdateQuestionResponseOptionsItemOptionKeyMax = 8;
+
+export const adminUpdateQuestionResponseOptionsItemDisplayOrderMin = 0;
+
+export const adminUpdateQuestionResponseOptionsItemTextMax = 4000;
+
+
+
+export const AdminUpdateQuestionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "questionCode": zod.string().regex(adminUpdateQuestionResponseQuestionCodeRegExp),
+  "topicId": zod.string().uuid(),
+  "text": zod.string().min(1).max(adminUpdateQuestionResponseTextMax),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "explanation": zod.string().max(adminUpdateQuestionResponseExplanationMax),
+  "imageKey": zod.string().max(adminUpdateQuestionResponseImageKeyMax).nullable(),
+  "referenceNotes": zod.string().max(adminUpdateQuestionResponseReferenceNotesMax).nullable(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string().min(1).max(adminUpdateQuestionResponseOptionsItemOptionKeyMax),
+  "displayOrder": zod.number().int().min(adminUpdateQuestionResponseOptionsItemDisplayOrderMin),
+  "text": zod.string().min(1).max(adminUpdateQuestionResponseOptionsItemTextMax),
+  "isCorrect": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Disable a question without deleting it (ADMIN)
+ */
+export const AdminDisableQuestionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const adminDisableQuestionResponseQuestionCodeRegExp = new RegExp('^CCNA-Q-[0-9]{6,}$');
+export const adminDisableQuestionResponseTextMax = 10000;
+
+export const adminDisableQuestionResponseExplanationMax = 10000;
+
+export const adminDisableQuestionResponseImageKeyMax = 512;
+
+export const adminDisableQuestionResponseReferenceNotesMax = 10000;
+
+export const adminDisableQuestionResponseOptionsItemOptionKeyMax = 8;
+
+export const adminDisableQuestionResponseOptionsItemDisplayOrderMin = 0;
+
+export const adminDisableQuestionResponseOptionsItemTextMax = 4000;
+
+
+
+export const AdminDisableQuestionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "questionCode": zod.string().regex(adminDisableQuestionResponseQuestionCodeRegExp),
+  "topicId": zod.string().uuid(),
+  "text": zod.string().min(1).max(adminDisableQuestionResponseTextMax),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "explanation": zod.string().max(adminDisableQuestionResponseExplanationMax),
+  "imageKey": zod.string().max(adminDisableQuestionResponseImageKeyMax).nullable(),
+  "referenceNotes": zod.string().max(adminDisableQuestionResponseReferenceNotesMax).nullable(),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string().min(1).max(adminDisableQuestionResponseOptionsItemOptionKeyMax),
+  "displayOrder": zod.number().int().min(adminDisableQuestionResponseOptionsItemDisplayOrderMin),
+  "text": zod.string().min(1).max(adminDisableQuestionResponseOptionsItemTextMax),
+  "isCorrect": zod.boolean()
+}))
+})
+
+

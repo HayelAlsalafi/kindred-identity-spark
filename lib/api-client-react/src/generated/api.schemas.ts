@@ -89,6 +89,206 @@ export interface AdminTopicUpdate {
   status?: AdminTopicUpdateStatus;
 }
 
+export interface AdminQuestionOption {
+  /**
+     * @minLength 1
+     * @maxLength 8
+     */
+  optionKey: string;
+  /** @minimum 0 */
+  displayOrder: number;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  text: string;
+  isCorrect: boolean;
+}
+
+export type AdminQuestionType = typeof AdminQuestionType[keyof typeof AdminQuestionType];
+
+
+export const AdminQuestionType = {
+  MULTIPLE_CHOICE_SINGLE: 'MULTIPLE_CHOICE_SINGLE',
+} as const;
+
+export type AdminQuestionDifficulty = typeof AdminQuestionDifficulty[keyof typeof AdminQuestionDifficulty];
+
+
+export const AdminQuestionDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+} as const;
+
+export type AdminQuestionStatus = typeof AdminQuestionStatus[keyof typeof AdminQuestionStatus];
+
+
+export const AdminQuestionStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface AdminQuestion {
+  id: string;
+  /** @pattern ^CCNA-Q-[0-9]{6,}$ */
+  readonly questionCode: string;
+  topicId: string;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  text: string;
+  type: AdminQuestionType;
+  difficulty: AdminQuestionDifficulty;
+  /** @maxLength 10000 */
+  explanation: string;
+  /** @maxLength 512 */
+  imageKey: string | null;
+  /** @maxLength 10000 */
+  referenceNotes: string | null;
+  status: AdminQuestionStatus;
+  createdAt: string;
+  updatedAt: string;
+  options: AdminQuestionOption[];
+}
+
+export interface AdminQuestionListResponse {
+  items: AdminQuestion[];
+  /** @minimum 0 */
+  total: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  limit: number;
+  /** @minimum 0 */
+  offset: number;
+}
+
+export type AdminQuestionCreateType = typeof AdminQuestionCreateType[keyof typeof AdminQuestionCreateType];
+
+
+export const AdminQuestionCreateType = {
+  MULTIPLE_CHOICE_SINGLE: 'MULTIPLE_CHOICE_SINGLE',
+} as const;
+
+export type AdminQuestionCreateDifficulty = typeof AdminQuestionCreateDifficulty[keyof typeof AdminQuestionCreateDifficulty];
+
+
+export const AdminQuestionCreateDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+} as const;
+
+export type AdminQuestionCreateStatus = typeof AdminQuestionCreateStatus[keyof typeof AdminQuestionCreateStatus];
+
+
+export const AdminQuestionCreateStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export type AdminQuestionCreateOptionsItem = {
+  /**
+     * @minLength 1
+     * @maxLength 8
+     */
+  optionKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  text: string;
+  isCorrect: boolean;
+};
+
+export interface AdminQuestionCreate {
+  topicId: string;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  text: string;
+  type: AdminQuestionCreateType;
+  difficulty: AdminQuestionCreateDifficulty;
+  /** @maxLength 10000 */
+  explanation?: string;
+  /** @maxLength 512 */
+  imageKey?: string | null;
+  /** @maxLength 10000 */
+  referenceNotes?: string | null;
+  status?: AdminQuestionCreateStatus;
+  /**
+     * @minItems 2
+     * @maxItems 10
+     */
+  options: AdminQuestionCreateOptionsItem[];
+}
+
+export type AdminQuestionUpdateType = typeof AdminQuestionUpdateType[keyof typeof AdminQuestionUpdateType];
+
+
+export const AdminQuestionUpdateType = {
+  MULTIPLE_CHOICE_SINGLE: 'MULTIPLE_CHOICE_SINGLE',
+} as const;
+
+export type AdminQuestionUpdateDifficulty = typeof AdminQuestionUpdateDifficulty[keyof typeof AdminQuestionUpdateDifficulty];
+
+
+export const AdminQuestionUpdateDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+} as const;
+
+export type AdminQuestionUpdateStatus = typeof AdminQuestionUpdateStatus[keyof typeof AdminQuestionUpdateStatus];
+
+
+export const AdminQuestionUpdateStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export type AdminQuestionUpdateOptionsItem = {
+  /**
+     * @minLength 1
+     * @maxLength 8
+     */
+  optionKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  text: string;
+  isCorrect: boolean;
+};
+
+export interface AdminQuestionUpdate {
+  topicId?: string;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  text?: string;
+  type?: AdminQuestionUpdateType;
+  difficulty?: AdminQuestionUpdateDifficulty;
+  /** @maxLength 10000 */
+  explanation?: string;
+  /** @maxLength 512 */
+  imageKey?: string | null;
+  /** @maxLength 10000 */
+  referenceNotes?: string | null;
+  status?: AdminQuestionUpdateStatus;
+  /**
+     * When supplied, replaces the whole option list and must contain exactly one correct option.
+     * @minItems 2
+     * @maxItems 10
+     */
+  options?: AdminQuestionUpdateOptionsItem[];
+}
+
 export type LearnerQuestionType = typeof LearnerQuestionType[keyof typeof LearnerQuestionType];
 
 
@@ -221,4 +421,37 @@ export type ErrorResponseError = {
 export interface ErrorResponse {
   error: ErrorResponseError;
 }
+
+export type AdminListQuestionsParams = {
+topicId?: string;
+status?: AdminListQuestionsStatus;
+difficulty?: AdminListQuestionsDifficulty;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ * @maximum 1000000
+ */
+offset?: number;
+};
+
+export type AdminListQuestionsStatus = typeof AdminListQuestionsStatus[keyof typeof AdminListQuestionsStatus];
+
+
+export const AdminListQuestionsStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export type AdminListQuestionsDifficulty = typeof AdminListQuestionsDifficulty[keyof typeof AdminListQuestionsDifficulty];
+
+
+export const AdminListQuestionsDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+} as const;
 
