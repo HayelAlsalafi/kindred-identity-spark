@@ -2,14 +2,15 @@
 
 - **Name:** CCNA Learning SaaS
 - **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-06 (Phase 3B-2 implementation present; full verification pending)
+- **Last updated:** 2026-10-07 (Phase 3 complete and runtime verified)
 
 | Phase | Status |
 | --- | --- |
 | Phase 0 — Architecture | COMPLETE |
 | Phase 1 — Foundation | COMPLETE |
 | Phase 2 — Auth, users, roles, authorization | VERIFIED (2026-10-04) |
-| Phase 3 — Topics & question management | IN PROGRESS — 3A, 3B-1 COMPLETE; 3B-2 UI present, full verification pending |
+| Phase 3 — Topics & question management | COMPLETE — runtime verified (2026-10-07) |
+| Phase 4 — Practice Engine | NEXT |
 
 ## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
 
@@ -162,3 +163,41 @@ present. No schema changes were made for this phase.
 | Full project typecheck | NOT COMPLETED — Replit's Node/pnpm versions do not match the versions declared by the project |
 
 Details: `development-log/checkpoints/PHASE-03B2-CHECKPOINT.md`.
+
+## Phase 3 Final Verification (2026-10-07)
+
+Phase 3 is COMPLETE and runtime verified.
+
+Phase 3A delivered the question domain foundation. Phase 3B-1 delivered the ADMIN topic API.
+Phase 3B-2, 3B-3 and 3B-4 delivered ADMIN topic/question management UI and API and were
+runtime verified on 2026-10-07 against the configured Clerk Development instance and Neon
+PostgreSQL database.
+
+Final local verification:
+
+- `pnpm install --frozen-lockfile`: PASS
+- Full project typecheck: PASS
+- Non-DB API tests: PASS — 58/58
+- API build: PASS
+- Learner web build: PASS
+- Windows root `pnpm run dev`: PASS
+- ADMIN/USER authorization runtime checks: PASS
+- Topic create/edit/disable runtime checks: PASS
+- Question create/edit/filter/disable runtime checks: PASS
+- Question code immutability: PASS (`CCNA-Q-000041` remained unchanged after edit)
+
+The temporary runtime topic `runtime-test-topic` remains DISABLED.
+Runtime question `CCNA-Q-000041` remains DISABLED.
+
+No load testing or production-readiness assessment has been performed.
+
+Details: `development-log/checkpoints/PHASE-03-CHECKPOINT.md`.
+
+## Next exact step — Phase 4 Practice Engine
+
+Implement the learner practice flow without exposing the correct answer before submission:
+
+Topic Map → select topic → start practice → question/options → submit answer →
+correct/incorrect result → correct answer + explanation → next question.
+
+Attempt history and learner statistics remain Phase 5 scope.
