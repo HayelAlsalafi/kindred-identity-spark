@@ -256,8 +256,8 @@ export function AdminQuestionManager() {
   const removeOption = (index: number) => {
     if (form.options.length <= 2) return;
     setForm((current) => {
-      const removedWasCorrect = current[index].isCorrect;
-      const options = current.filter((_, optionIndex) => optionIndex !== index);
+      const removedWasCorrect = current.options[index].isCorrect;
+      const options = current.options.filter((_, optionIndex) => optionIndex !== index);
       if (removedWasCorrect && !options.some((option) => option.isCorrect)) {
         options[0] = { ...options[0], isCorrect: true };
       }
