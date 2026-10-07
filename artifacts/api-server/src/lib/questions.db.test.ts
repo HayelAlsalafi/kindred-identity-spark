@@ -11,6 +11,7 @@ const ROLLBACK = new Error("rollback");
 describe.skipIf(!enabled)("question domain (database)", async () => {
   const { db, pool, topicsTable, questionsTable } = await import("@workspace/db");
   const { createQuestion, getLearnerQuestion, QuestionValidationError } = await import("./questions");
+  const { getPracticeQuestionForTopic, submitPracticeAnswer } = await import("./practice");
   const { eq, sql } = await import("drizzle-orm");
 
   async function inRollback(fn: (tx: typeof db) => Promise<void>) {
@@ -102,6 +103,61 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
       const dt = await makeTopic(tx, "DISABLED");
       const inDisabledTopic = await createQuestion(input(dt.id), tx);
       expect(await getLearnerQuestion(inDisabledTopic.question.id, tx)).toBeNull();
+    });
+  });
+
+  it("keeps practice question responses answer-free and grades only on submission", async () => {
+    await inRollback(async (tx) => {
+      const topic = await makeTopic(tx);
+      const created = await createQuestion(
+        input(topic.id, {
+          explanation: "The correct answer is B.",
+          referenceNotes: "Author-only note.",
+          options: [
+            { optionKey: "A", text: "Incorrect", isCorrect: false },
+            { optionKey: "B", text: "Correct", isCorrect: true },
+          ],
+        }),
+        tx,
+      );
+
+      const practiceQuestion = await getPracticeQuestionForTopic(topic.id, tx);
+      expect(practiceQuestion?.id).toBe(created.question.id);
+      expect(practiceQuestion?.options).toEqual([
+        { optionKey: "A", text: "Incorrect" },
+        { optionKey: "B", text: "Correct" },
+      ]);
+      expect(JSON.stringify(practiceQuestion)).not.toMatch(
+        /isCorrect|correctOption|explanation|referenceNotes|imageKey/,
+      );
+
+      await expect(submitPracticeAnswer(created.question.id, "A", tx)).resolves.toMatchObject({
+        isCorrect: false,
+        correctOption: { optionKey: "B", text: "Correct" },
+        explanation: "The correct answer is B.",
+      });
+      await expect(submitPracticeAnswer(created.question.id, "B", tx)).resolves.toMatchObject({
+        isCorrect: true,
+        correctOption: { optionKey: "B", text: "Correct" },
+      });
+      await expect(submitPracticeAnswer(created.question.id, "Z", tx)).rejects.toMatchObject({
+        status: 400,
+        code: "INVALID_OPTION",
+      });
+    });
+  });
+
+  it("does not fetch or grade disabled questions or questions in disabled topics", async () => {
+    await inRollback(async (tx) => {
+      const activeTopic = await makeTopic(tx);
+      const disabledQuestion = await createQuestion(input(activeTopic.id, { status: "DISABLED" }), tx);
+      expect(await getPracticeQuestionForTopic(activeTopic.id, tx)).toBeNull();
+      expect(await submitPracticeAnswer(disabledQuestion.question.id, "A", tx)).toBeNull();
+
+      const disabledTopic = await makeTopic(tx, "DISABLED");
+      const activeQuestion = await createQuestion(input(disabledTopic.id), tx);
+      expect(await getPracticeQuestionForTopic(disabledTopic.id, tx)).toBeNull();
+      expect(await submitPracticeAnswer(activeQuestion.question.id, "A", tx)).toBeNull();
     });
   });
 

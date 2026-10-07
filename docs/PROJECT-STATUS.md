@@ -1,8 +1,8 @@
 # Project Status
 
 - **Name:** CCNA Learning SaaS
-- **Version:** 0.3.0-auth
-- **Last updated:** 2026-10-07 (Phase 3 complete and runtime verified)
+- **Version:** 0.4.0-practice-api
+- **Last updated:** 2026-10-07 (Phase 4A Practice API complete and runtime verified)
 
 | Phase | Status |
 | --- | --- |
@@ -10,7 +10,7 @@
 | Phase 1 — Foundation | COMPLETE |
 | Phase 2 — Auth, users, roles, authorization | VERIFIED (2026-10-04) |
 | Phase 3 — Topics & question management | COMPLETE — runtime verified (2026-10-07) |
-| Phase 4 — Practice Engine | NEXT |
+| Phase 4 — Practice Engine | IN PROGRESS — Phase 4A API complete/runtime verified; Phase 4B UI next |
 
 ## Environment configuration (Clerk DEVELOPMENT instance, Neon PostgreSQL)
 
@@ -193,11 +193,26 @@ No load testing or production-readiness assessment has been performed.
 
 Details: `development-log/checkpoints/PHASE-03-CHECKPOINT.md`.
 
-## Next exact step — Phase 4 Practice Engine
+## Phase 4A — Practice API Foundation (2026-10-07)
 
-Implement the learner practice flow without exposing the correct answer before submission:
+COMPLETE and runtime verified.
 
-Topic Map → select topic → start practice → question/options → submit answer →
-correct/incorrect result → correct answer + explanation → next question.
+- Authenticated learner endpoint fetches one ACTIVE question from an ACTIVE topic.
+- Pre-submit response is allow-listed and does not expose correct-answer flags, explanation, reference notes, or other answer-revealing fields.
+- Answer submission is graded server-side; the selected option must belong to the question.
+- Post-submit response returns correct/incorrect, the correct option, and explanation.
+- Disabled questions/topics are not practice-eligible.
+- No attempt/statistics persistence and no Practice UI were added in 4A.
+- No database schema changes were required.
+
+Verification on 2026-10-07: full typecheck PASS; non-DB API tests PASS — 65/65; API and learner builds PASS. Runtime verification with `CCNA-Q-000041` confirmed safe pre-submit payload, server-side grading, and `400 INVALID_OPTION` for an unknown option. The question was returned to DISABLED after verification.
+
+The DB integration suite was not executed in the final local run because the shell invocation did not pass `DATABASE_URL` into Vitest; the suite did not reach test execution. This is recorded as an environment-invocation limitation, not as a passing DB-test result.
+
+Details: `development-log/checkpoints/PHASE-04A-CHECKPOINT.md`.
+
+## Next exact step — Phase 4B Practice UI
+
+Build the learner Practice UI against the verified Phase 4A contract: Topic Map → select topic → fetch safe question/options → submit answer → show correct/incorrect, correct answer and explanation → next question.
 
 Attempt history and learner statistics remain Phase 5 scope.

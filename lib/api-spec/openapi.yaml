@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: learning
     description: Learner-facing read operations
+  - name: practice
+    description: Authenticated practice question and answer operations
   - name: auth
     description: Clerk-backed authentication state
   - name: admin
@@ -148,6 +150,110 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Question not found or not active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /practice/topics/{topicId}/question:
+    get:
+      operationId: getPracticeQuestion
+      tags: [practice]
+      summary: Fetch a practice question for an active topic
+      description: Returns one random ACTIVE question from an ACTIVE topic. Answer keys, explanations, and author-only fields are excluded.
+      security:
+        - clerkSession: []
+      parameters:
+        - name: topicId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Safe practice question, before answer submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeQuestion"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account is disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Topic is not active or has no active questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Practice question could not be fetched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /practice/questions/{questionId}/answer:
+    post:
+      operationId: submitPracticeAnswer
+      tags: [practice]
+      summary: Submit and grade an answer to an active practice question
+      description: Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. This foundation does not record attempts.
+      security:
+        - clerkSession: []
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PracticeAnswerInput"
+      responses:
+        "200":
+          description: Server-graded answer result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeAnswerResult"
+        "400":
+          description: Invalid request or selected option
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: No authenticated Clerk session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account is disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Question is not active or its topic is not active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Practice answer could not be submitted
           content:
             application/json:
               schema:
@@ -815,6 +921,80 @@ components:
                 type: string
               text:
                 type: string
+    PracticeTopic:
+      type: object
+      additionalProperties: false
+      required: [id, slug, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+    PracticeQuestionOption:
+      type: object
+      additionalProperties: false
+      required: [optionKey, text]
+      properties:
+        optionKey:
+          type: string
+        text:
+          type: string
+    PracticeQuestion:
+      type: object
+      additionalProperties: false
+      required: [id, questionCode, topic, text, type, difficulty, options]
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionCode:
+          type: string
+        topic:
+          $ref: "#/components/schemas/PracticeTopic"
+        text:
+          type: string
+        type:
+          type: string
+          enum: [MULTIPLE_CHOICE_SINGLE]
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticeQuestionOption"
+    PracticeAnswerInput:
+      type: object
+      additionalProperties: false
+      required: [optionKey]
+      properties:
+        optionKey:
+          type: string
+          minLength: 1
+          maxLength: 8
+    PracticeCorrectOption:
+      type: object
+      additionalProperties: false
+      required: [optionKey, text]
+      properties:
+        optionKey:
+          type: string
+        text:
+          type: string
+    PracticeAnswerResult:
+      type: object
+      additionalProperties: false
+      required: [isCorrect, correctOption, explanation]
+      properties:
+        isCorrect:
+          type: boolean
+        correctOption:
+          $ref: "#/components/schemas/PracticeCorrectOption"
+        explanation:
+          type: string
     HealthStatus:
       type: object
       properties:
