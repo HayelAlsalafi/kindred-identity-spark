@@ -161,6 +161,58 @@ export const GetQuestionResponse = zod.object({
 
 
 /**
+ * Returns one random ACTIVE question from an ACTIVE topic. Answer keys, explanations, and author-only fields are excluded.
+ * @summary Fetch a practice question for an active topic
+ */
+export const GetPracticeQuestionParams = zod.object({
+  "topicId": zod.coerce.string().uuid()
+})
+
+export const GetPracticeQuestionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "questionCode": zod.string(),
+  "topic": zod.object({
+  "id": zod.string().uuid(),
+  "slug": zod.string(),
+  "name": zod.string()
+}),
+  "text": zod.string(),
+  "type": zod.enum(['MULTIPLE_CHOICE_SINGLE']),
+  "difficulty": zod.enum(['EASY', 'MEDIUM', 'HARD']),
+  "options": zod.array(zod.object({
+  "optionKey": zod.string(),
+  "text": zod.string()
+}))
+})
+
+
+/**
+ * Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. This foundation does not record attempts.
+ * @summary Submit and grade an answer to an active practice question
+ */
+export const SubmitPracticeAnswerParams = zod.object({
+  "questionId": zod.coerce.string().uuid()
+})
+
+export const submitPracticeAnswerBodyOptionKeyMax = 8;
+
+
+
+export const SubmitPracticeAnswerBody = zod.object({
+  "optionKey": zod.string().min(1).max(submitPracticeAnswerBodyOptionKeyMax)
+})
+
+export const SubmitPracticeAnswerResponse = zod.object({
+  "isCorrect": zod.boolean(),
+  "correctOption": zod.object({
+  "optionKey": zod.string(),
+  "text": zod.string()
+}),
+  "explanation": zod.string()
+})
+
+
+/**
  * @summary List all topics including disabled (ADMIN)
  */
 export const adminListTopicsResponseSlugMin = 2;

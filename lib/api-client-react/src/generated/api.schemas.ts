@@ -321,6 +321,62 @@ export interface LearnerQuestion {
   options: LearnerQuestionOptionsItem[];
 }
 
+export interface PracticeTopic {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface PracticeQuestionOption {
+  optionKey: string;
+  text: string;
+}
+
+export type PracticeQuestionType = typeof PracticeQuestionType[keyof typeof PracticeQuestionType];
+
+
+export const PracticeQuestionType = {
+  MULTIPLE_CHOICE_SINGLE: 'MULTIPLE_CHOICE_SINGLE',
+} as const;
+
+export type PracticeQuestionDifficulty = typeof PracticeQuestionDifficulty[keyof typeof PracticeQuestionDifficulty];
+
+
+export const PracticeQuestionDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD',
+} as const;
+
+export interface PracticeQuestion {
+  id: string;
+  questionCode: string;
+  topic: PracticeTopic;
+  text: string;
+  type: PracticeQuestionType;
+  difficulty: PracticeQuestionDifficulty;
+  options: PracticeQuestionOption[];
+}
+
+export interface PracticeAnswerInput {
+  /**
+     * @minLength 1
+     * @maxLength 8
+     */
+  optionKey: string;
+}
+
+export interface PracticeCorrectOption {
+  optionKey: string;
+  text: string;
+}
+
+export interface PracticeAnswerResult {
+  isCorrect: boolean;
+  correctOption: PracticeCorrectOption;
+  explanation: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
