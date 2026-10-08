@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import the real schemas without creating a PostgreSQL pool.
 vi.mock("@workspace/db", async () => ({
-  ...await import("@workspace/db/schema"),
+  ...(await import("@workspace/db/schema")),
   db: {},
 }));
 
@@ -30,9 +30,12 @@ function makeDb({
     let reads = 0;
     const tx = {
       select: () => {
-        const result = reads++ === 0
-          ? (missing ? [] : [{ question: { id: questionId, topicId, explanation: "Because B." } }])
-          : answerOptions;
+        const result =
+          reads++ === 0
+            ? missing
+              ? []
+              : [{ question: { id: questionId, topicId, explanation: "Because B." } }]
+            : answerOptions;
         const query = {
           from: () => query,
           innerJoin: () => query,
@@ -67,7 +70,10 @@ function makeDb({
 describe("practice attempt persistence (unit)", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it.each([["A", false], ["B", true]] as const)(
+  it.each([
+    ["A", false],
+    ["B", true],
+  ] as const)(
     "persists server-graded option %s before returning unchanged feedback",
     async (key, correct) => {
       const fake = makeDb();
@@ -77,9 +83,15 @@ describe("practice attempt persistence (unit)", () => {
         correctOption: { optionKey: "B", text: "Correct" },
         explanation: "Because B.",
       });
-      expect(fake.rows).toEqual([{
-        userId, questionId, topicId, selectedOptionKey: key, isCorrect: correct,
-      }]);
+      expect(fake.rows).toEqual([
+        {
+          userId,
+          questionId,
+          topicId,
+          selectedOptionKey: key,
+          isCorrect: correct,
+        },
+      ]);
       expect(fake.transaction).toHaveBeenCalledOnce();
       expect(fake.locks.mock.calls).toEqual([["share"], ["share"]]);
     },
@@ -110,25 +122,30 @@ describe("practice attempt persistence (unit)", () => {
   it("does not insert invalid options", async () => {
     const fake = makeDb();
     await expect(submitPracticeAnswer(questionId, "Z", userId, fake.db)).rejects.toMatchObject({
-      status: 400, code: "INVALID_OPTION",
+      status: 400,
+      code: "INVALID_OPTION",
     });
     expect(fake.insert).not.toHaveBeenCalled();
   });
 
   it.each([
-    options.map((option) => ({ ...option, isCorrect: false })),
-    options.map((option) => ({ ...option, isCorrect: true })),
+    [options.map((option) => ({ ...option, isCorrect: false }))],
+    [options.map((option) => ({ ...option, isCorrect: true }))],
   ])("does not insert when the correct-answer data is inconsistent", async (answerOptions) => {
     const fake = makeDb({ answerOptions });
     await expect(submitPracticeAnswer(questionId, "A", userId, fake.db)).rejects.toMatchObject({
-      status: 500, code: "INTERNAL_ERROR",
+      status: 500,
+      code: "INTERNAL_ERROR",
     });
     expect(fake.insert).not.toHaveBeenCalled();
   });
 
-  it.each(["insert", "commit"])("propagates %s failure without a successful attempt", async (failure) => {
-    const fake = makeDb({ failInsert: failure === "insert", failCommit: failure === "commit" });
-    await expect(submitPracticeAnswer(questionId, "B", userId, fake.db)).rejects.toThrow();
-    expect(fake.rows).toEqual([]);
-  });
+  it.each(["insert", "commit"])(
+    "propagates %s failure without a successful attempt",
+    async (failure) => {
+      const fake = makeDb({ failInsert: failure === "insert", failCommit: failure === "commit" });
+      await expect(submitPracticeAnswer(questionId, "B", userId, fake.db)).rejects.toThrow();
+      expect(fake.rows).toEqual([]);
+    },
+  );
 });

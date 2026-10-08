@@ -7,10 +7,15 @@ import { describe, expect, it } from "vitest";
 
 const enabled = process.env["RUN_DB_TESTS"] === "1" && !!process.env["DATABASE_URL"];
 const ROLLBACK = new Error("rollback");
-
-describe.skipIf(!enabled)("question domain (database)", async () => {
-  const { db, pool, topicsTable, questionsTable, usersTable } = await import("@workspace/db");
-  const { createQuestion, getLearnerQuestion, QuestionValidationError } = await import("./questions");
+describe("question domain (database)", async () => {
+  if (!enabled) {
+    it.skip("requires RUN_DB_TESTS=1 and DATABASE_URL", () => {});
+    return;
+  }
+  const { db, pool, topicsTable, questionsTable, usersTable, practiceAttemptsTable } =
+    await import("@workspace/db");
+  const { createQuestion, getLearnerQuestion, QuestionValidationError } =
+    await import("./questions");
   const { getPracticeQuestionForTopic, submitPracticeAnswer } = await import("./practice");
   const { eq, sql } = await import("drizzle-orm");
 
@@ -33,11 +38,14 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
   }
   async function makeUser(tx: typeof db) {
     const suffix = crypto.randomUUID();
-    const [user] = await tx.insert(usersTable).values({
-      clerkUserId: `p5a-${suffix}`,
-      email: `${suffix}@example.com`,
-      displayName: "Practice test learner",
-    }).returning();
+    const [user] = await tx
+      .insert(usersTable)
+      .values({
+        clerkUserId: `p5a-${suffix}`,
+        email: `${suffix}@example.com`,
+        displayName: "Practice test learner",
+      })
+      .returning();
     return user!;
   }
   const input = (topicId: string, extra: Record<string, unknown> = {}) => ({
@@ -82,7 +90,10 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
       const a = await createQuestion(input(t.id), tx);
       await tx.execute(sql`savepoint s2`);
       await expect(
-        tx.update(questionsTable).set({ questionCode: "CCNA-Q-999999" }).where(eq(questionsTable.id, a.question.id)),
+        tx
+          .update(questionsTable)
+          .set({ questionCode: "CCNA-Q-999999" })
+          .where(eq(questionsTable.id, a.question.id)),
       ).rejects.toThrow();
       await tx.execute(sql`rollback to savepoint s2`);
     });
@@ -91,10 +102,14 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
   it("rejects a non-existent topic (service and foreign key)", async () => {
     await inRollback(async (tx) => {
       const missing = "00000000-0000-4000-8000-000000000000";
-      await expect(createQuestion(input(missing), tx)).rejects.toBeInstanceOf(QuestionValidationError);
+      await expect(createQuestion(input(missing), tx)).rejects.toBeInstanceOf(
+        QuestionValidationError,
+      );
       await tx.execute(sql`savepoint s3`);
       await expect(
-        tx.execute(sql`insert into questions (topic_id, text, difficulty) values (${missing}, 'x', 'EASY')`),
+        tx.execute(
+          sql`insert into questions (topic_id, text, difficulty) values (${missing}, 'x', 'EASY')`,
+        ),
       ).rejects.toThrow();
       await tx.execute(sql`rollback to savepoint s3`);
     });
@@ -141,19 +156,93 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
         /isCorrect|correctOption|explanation|referenceNotes|imageKey/,
       );
 
-      await expect(submitPracticeAnswer(created.question.id, "A", user.id, tx)).resolves.toMatchObject({
+      await expect(
+        submitPracticeAnswer(created.question.id, "A", user.id, tx),
+      ).resolves.toMatchObject({
         isCorrect: false,
         correctOption: { optionKey: "B", text: "Correct" },
         explanation: "The correct answer is B.",
       });
-      await expect(submitPracticeAnswer(created.question.id, "B", user.id, tx)).resolves.toMatchObject({
+      await expect(
+        submitPracticeAnswer(created.question.id, "B", user.id, tx),
+      ).resolves.toMatchObject({
         isCorrect: true,
         correctOption: { optionKey: "B", text: "Correct" },
       });
-      await expect(submitPracticeAnswer(created.question.id, "Z", user.id, tx)).rejects.toMatchObject({
+      await expect(
+        submitPracticeAnswer(created.question.id, "Z", user.id, tx),
+      ).rejects.toMatchObject({
         status: 400,
         code: "INVALID_OPTION",
       });
+    });
+  });
+
+  it("persists practice attempts with correct user, question, topic and grading", async () => {
+    await inRollback(async (tx) => {
+      const user = await makeUser(tx);
+      const topic = await makeTopic(tx);
+
+      const created = await createQuestion(
+        input(topic.id, {
+          options: [
+            { optionKey: "A", text: "Incorrect", isCorrect: false },
+            { optionKey: "B", text: "Correct", isCorrect: true },
+          ],
+        }),
+        tx,
+      );
+
+      await submitPracticeAnswer(created.question.id, "A", user.id, tx);
+      await submitPracticeAnswer(created.question.id, "B", user.id, tx);
+
+      const attempts = await tx
+        .select()
+        .from(practiceAttemptsTable)
+        .where(eq(practiceAttemptsTable.questionId, created.question.id));
+
+      expect(attempts).toHaveLength(2);
+
+      expect(
+        attempts.map((attempt) => ({
+          userId: attempt.userId,
+          questionId: attempt.questionId,
+          topicId: attempt.topicId,
+          selectedOptionKey: attempt.selectedOptionKey,
+          isCorrect: attempt.isCorrect,
+        })),
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            userId: user.id,
+            questionId: created.question.id,
+            topicId: topic.id,
+            selectedOptionKey: "A",
+            isCorrect: false,
+          },
+          {
+            userId: user.id,
+            questionId: created.question.id,
+            topicId: topic.id,
+            selectedOptionKey: "B",
+            isCorrect: true,
+          },
+        ]),
+      );
+
+      await expect(
+        submitPracticeAnswer(created.question.id, "Z", user.id, tx),
+      ).rejects.toMatchObject({
+        status: 400,
+        code: "INVALID_OPTION",
+      });
+
+      const attemptsAfterRejection = await tx
+        .select()
+        .from(practiceAttemptsTable)
+        .where(eq(practiceAttemptsTable.questionId, created.question.id));
+
+      expect(attemptsAfterRejection).toHaveLength(2);
     });
   });
 
@@ -161,7 +250,10 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
     await inRollback(async (tx) => {
       const user = await makeUser(tx);
       const activeTopic = await makeTopic(tx);
-      const disabledQuestion = await createQuestion(input(activeTopic.id, { status: "DISABLED" }), tx);
+      const disabledQuestion = await createQuestion(
+        input(activeTopic.id, { status: "DISABLED" }),
+        tx,
+      );
       expect(await getPracticeQuestionForTopic(activeTopic.id, tx)).toBeNull();
       expect(await submitPracticeAnswer(disabledQuestion.question.id, "A", user.id, tx)).toBeNull();
 

@@ -6,8 +6,11 @@ import { describe, expect, it } from "vitest";
 
 const enabled = process.env["RUN_DB_TESTS"] === "1" && !!process.env["DATABASE_URL"];
 const ROLLBACK = new Error("rollback");
-
-describe.skipIf(!enabled)("admin topic service (database)", async () => {
+describe("admin topic service (database)", async () => {
+  if (!enabled) {
+    it.skip("requires RUN_DB_TESTS=1 and DATABASE_URL", () => {});
+    return;
+  }
   const { db, pool, topicsTable } = await import("@workspace/db");
   const svc = await import("./topics-admin");
   const { eq } = await import("drizzle-orm");
@@ -42,7 +45,13 @@ describe.skipIf(!enabled)("admin topic service (database)", async () => {
 
   it("rejects invalid data", async () => {
     await inRollback(async (tx) => {
-      for (const bad of [{}, { slug: "x", name: "" }, { slug: "Bad Slug!", name: "A" }, { slug: "ok-slug", name: "A", status: "GONE" }, { slug: "ok-slug", name: "A", extra: 1 }]) {
+      for (const bad of [
+        {},
+        { slug: "x", name: "" },
+        { slug: "Bad Slug!", name: "A" },
+        { slug: "ok-slug", name: "A", status: "GONE" },
+        { slug: "ok-slug", name: "A", extra: 1 },
+      ]) {
         await expect(svc.createTopic(bad, tx)).rejects.toMatchObject({ status: 400 });
       }
       const t = await svc.createTopic({ slug: slug(), name: "A" }, tx);
@@ -54,9 +63,13 @@ describe.skipIf(!enabled)("admin topic service (database)", async () => {
     await inRollback(async (tx) => {
       const s = slug();
       const a = await svc.createTopic({ slug: s, name: "A" }, tx);
-      await expect(svc.createTopic({ slug: s.toUpperCase(), name: "B" }, tx)).rejects.toMatchObject({ status: 409 });
+      await expect(svc.createTopic({ slug: s.toUpperCase(), name: "B" }, tx)).rejects.toMatchObject(
+        { status: 409 },
+      );
       const b = await svc.createTopic({ slug: slug(), name: "B" }, tx);
-      await expect(svc.updateTopic(b.id, { slug: a.slug }, tx)).rejects.toMatchObject({ status: 409 });
+      await expect(svc.updateTopic(b.id, { slug: a.slug }, tx)).rejects.toMatchObject({
+        status: 409,
+      });
       expect((await svc.updateTopic(a.id, { slug: a.slug }, tx)).slug).toBe(a.slug); // same row OK
     });
   });
@@ -64,7 +77,9 @@ describe.skipIf(!enabled)("admin topic service (database)", async () => {
   it("returns 404 for unknown ids", async () => {
     await inRollback(async (tx) => {
       const missing = "00000000-0000-4000-8000-000000000000";
-      await expect(svc.updateTopic(missing, { name: "x" }, tx)).rejects.toMatchObject({ status: 404 });
+      await expect(svc.updateTopic(missing, { name: "x" }, tx)).rejects.toMatchObject({
+        status: 404,
+      });
       await expect(svc.disableTopic(missing, tx)).rejects.toMatchObject({ status: 404 });
     });
   });
