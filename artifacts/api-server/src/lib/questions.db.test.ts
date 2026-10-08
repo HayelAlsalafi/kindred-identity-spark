@@ -9,7 +9,7 @@ const enabled = process.env["RUN_DB_TESTS"] === "1" && !!process.env["DATABASE_U
 const ROLLBACK = new Error("rollback");
 
 describe.skipIf(!enabled)("question domain (database)", async () => {
-  const { db, pool, topicsTable, questionsTable } = await import("@workspace/db");
+  const { db, pool, topicsTable, questionsTable, usersTable } = await import("@workspace/db");
   const { createQuestion, getLearnerQuestion, QuestionValidationError } = await import("./questions");
   const { getPracticeQuestionForTopic, submitPracticeAnswer } = await import("./practice");
   const { eq, sql } = await import("drizzle-orm");
@@ -30,6 +30,15 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
       .values({ slug: `p3a-test-${crypto.randomUUID()}`, name: "P3A test", status })
       .returning();
     return t!;
+  }
+  async function makeUser(tx: typeof db) {
+    const suffix = crypto.randomUUID();
+    const [user] = await tx.insert(usersTable).values({
+      clerkUserId: `p5a-${suffix}`,
+      email: `${suffix}@example.com`,
+      displayName: "Practice test learner",
+    }).returning();
+    return user!;
   }
   const input = (topicId: string, extra: Record<string, unknown> = {}) => ({
     topicId,
@@ -108,6 +117,7 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
 
   it("keeps practice question responses answer-free and grades only on submission", async () => {
     await inRollback(async (tx) => {
+      const user = await makeUser(tx);
       const topic = await makeTopic(tx);
       const created = await createQuestion(
         input(topic.id, {
@@ -131,16 +141,16 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
         /isCorrect|correctOption|explanation|referenceNotes|imageKey/,
       );
 
-      await expect(submitPracticeAnswer(created.question.id, "A", tx)).resolves.toMatchObject({
+      await expect(submitPracticeAnswer(created.question.id, "A", user.id, tx)).resolves.toMatchObject({
         isCorrect: false,
         correctOption: { optionKey: "B", text: "Correct" },
         explanation: "The correct answer is B.",
       });
-      await expect(submitPracticeAnswer(created.question.id, "B", tx)).resolves.toMatchObject({
+      await expect(submitPracticeAnswer(created.question.id, "B", user.id, tx)).resolves.toMatchObject({
         isCorrect: true,
         correctOption: { optionKey: "B", text: "Correct" },
       });
-      await expect(submitPracticeAnswer(created.question.id, "Z", tx)).rejects.toMatchObject({
+      await expect(submitPracticeAnswer(created.question.id, "Z", user.id, tx)).rejects.toMatchObject({
         status: 400,
         code: "INVALID_OPTION",
       });
@@ -149,15 +159,16 @@ describe.skipIf(!enabled)("question domain (database)", async () => {
 
   it("does not fetch or grade disabled questions or questions in disabled topics", async () => {
     await inRollback(async (tx) => {
+      const user = await makeUser(tx);
       const activeTopic = await makeTopic(tx);
       const disabledQuestion = await createQuestion(input(activeTopic.id, { status: "DISABLED" }), tx);
       expect(await getPracticeQuestionForTopic(activeTopic.id, tx)).toBeNull();
-      expect(await submitPracticeAnswer(disabledQuestion.question.id, "A", tx)).toBeNull();
+      expect(await submitPracticeAnswer(disabledQuestion.question.id, "A", user.id, tx)).toBeNull();
 
       const disabledTopic = await makeTopic(tx, "DISABLED");
       const activeQuestion = await createQuestion(input(disabledTopic.id), tx);
       expect(await getPracticeQuestionForTopic(disabledTopic.id, tx)).toBeNull();
-      expect(await submitPracticeAnswer(activeQuestion.question.id, "A", tx)).toBeNull();
+      expect(await submitPracticeAnswer(activeQuestion.question.id, "A", user.id, tx)).toBeNull();
     });
   });
 

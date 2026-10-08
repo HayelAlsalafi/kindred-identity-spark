@@ -1,0 +1,56 @@
+Implement **Phase 5A — Practice Attempt Persistence** in the existing CCNA Platform.
+
+**Current branch:** `phase-5a-attempt-persistence`
+
+The repository is already configured and tested on my local Windows machine. Your job is CODE IMPLEMENTATION ONLY.
+
+**Do not run or set up this project on Replit.**
+
+### Implementation
+
+1. Inspect the existing Drizzle schemas, authentication middleware, Practice API, migration conventions, and relevant tests.
+2. Create a `practice_attempts` table with:
+   - UUID primary key
+   - `user_id` referencing `users`
+   - `question_id` referencing `questions`
+   - `topic_id` referencing `topics`
+   - `selected_option_key`
+   - `is_correct`
+   - `submitted_at` with timezone
+3. Add appropriate indexes for user history, topic progress, and chronological queries.
+4. Create a forward-only SQL migration using existing project conventions. Do not edit previous migrations.
+5. Extend the existing POST `/api/practice/questions/:questionId/answer` implementation:
+   - Get the internal user ID from authenticated server-side context.
+   - Validate the active question, topic, and selected option.
+   - Grade the answer on the server.
+   - Persist each valid attempt atomically before returning feedback.
+   - Preserve the current response contract: `isCorrect`, `correctOption`, `explanation`.
+6. Allow repeated attempts on the same question.
+7. Ensure invalid submissions, disabled questions/topics, unauthenticated users, and database failures do not create successful attempts.
+8. Preserve historical attempts when questions/topics are disabled. Avoid destructive cascades.
+9. Add focused unit and database integration tests for correct/incorrect answers, repeated attempts, user isolation, and transaction rollback.
+
+### Strict scope
+
+- No frontend changes.
+- No dashboards, statistics, or Phase 5B features.
+- No new API endpoints unless absolutely required.
+- No dependency installation or updates.
+- No Replit workflows, Run, Preview, deployments, or server startup.
+- No database or Clerk configuration.
+- Do not execute database migrations.
+- Do not modify `.replit` or agent memory files.
+- Do not commit, push, merge, or create a PR.
+
+### Verification
+
+Run only lightweight checks that do not require dependency installation, such as `git diff --check`. Do not repeatedly retry blocked commands. Report any unexecuted tests explicitly.
+
+When finished, STOP and provide:
+- Changed files
+- Migration summary
+- Authentication and transaction design
+- Tests added and their execution status
+- Remaining risks or blockers
+
+Minimize tool calls and avoid unrelated exploration.
