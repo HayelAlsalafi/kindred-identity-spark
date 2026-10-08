@@ -1,6 +1,7 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import {
   db as defaultDb,
+  practiceAttemptsTable,
   questionOptionsTable,
   questionsTable,
   topicsTable,
@@ -75,51 +76,68 @@ export async function getPracticeQuestionForTopic(topicId: string, db: Db = defa
 }
 
 /**
- * Grades an answer against the current database record. No attempt is written
- * in this phase; disabled questions and topics are indistinguishable from
- * missing questions.
+ * Grades and persists one submission atomically. The caller supplies the
+ * internal user ID from authenticated server context, never from client input.
+ * Disabled questions/topics remain indistinguishable from missing questions.
  */
 export async function submitPracticeAnswer(
   questionId: string,
   selectedOptionKey: string,
+  userId: string,
   db: Db = defaultDb,
 ) {
-  const [row] = await db
-    .select({ question: questionsTable })
-    .from(questionsTable)
-    .innerJoin(topicsTable, eq(topicsTable.id, questionsTable.topicId))
-    .where(activePracticeQuestionFilter(questionId))
-    .limit(1);
+  return db.transaction(async (tx) => {
+    // SHARE locks allow concurrent submissions, but prevent question/topic
+    // edits or disables until this attempt commits. Admin option replacement
+    // updates the parent question first and therefore waits on this lock too.
+    const [row] = await tx
+      .select({ question: questionsTable })
+      .from(questionsTable)
+      .innerJoin(topicsTable, eq(topicsTable.id, questionsTable.topicId))
+      .where(activePracticeQuestionFilter(questionId))
+      .limit(1)
+      .for("share");
 
-  if (!row) return null;
+    if (!row) return null;
 
-  const options = await db
-    .select({
-      optionKey: questionOptionsTable.optionKey,
-      text: questionOptionsTable.text,
-      isCorrect: questionOptionsTable.isCorrect,
-    })
-    .from(questionOptionsTable)
-    .where(eq(questionOptionsTable.questionId, questionId))
-    .orderBy(asc(questionOptionsTable.displayOrder));
+    const options = await tx
+      .select({
+        optionKey: questionOptionsTable.optionKey,
+        text: questionOptionsTable.text,
+        isCorrect: questionOptionsTable.isCorrect,
+      })
+      .from(questionOptionsTable)
+      .where(eq(questionOptionsTable.questionId, questionId))
+      .orderBy(asc(questionOptionsTable.displayOrder))
+      .for("share");
 
-  const normalizedKey = selectedOptionKey.trim().toUpperCase();
-  const selectedOption = options.find((option) => option.optionKey === normalizedKey);
-  if (!selectedOption) {
-    throw new PracticeApiError(400, "INVALID_OPTION", "Selected option is not part of this question.");
-  }
+    const normalizedKey = selectedOptionKey.trim().toUpperCase();
+    const selectedOption = options.find((option) => option.optionKey === normalizedKey);
+    if (!selectedOption) {
+      throw new PracticeApiError(400, "INVALID_OPTION", "Selected option is not part of this question.");
+    }
 
-  const correctOption = options.find((option) => option.isCorrect);
-  if (!correctOption) {
-    throw new PracticeApiError(500, "INTERNAL_ERROR", "Question answer data is unavailable.");
-  }
+    const correctOptions = options.filter((option) => option.isCorrect);
+    const correctOption = correctOptions[0];
+    if (correctOptions.length !== 1 || !correctOption) {
+      throw new PracticeApiError(500, "INTERNAL_ERROR", "Question answer data is unavailable.");
+    }
 
-  return {
-    isCorrect: selectedOption.isCorrect,
-    correctOption: {
-      optionKey: correctOption.optionKey,
-      text: correctOption.text,
-    },
-    explanation: row.question.explanation,
-  };
+    await tx.insert(practiceAttemptsTable).values({
+      userId,
+      questionId: row.question.id,
+      topicId: row.question.topicId,
+      selectedOptionKey: normalizedKey,
+      isCorrect: selectedOption.isCorrect,
+    });
+
+    return {
+      isCorrect: selectedOption.isCorrect,
+      correctOption: {
+        optionKey: correctOption.optionKey,
+        text: correctOption.text,
+      },
+      explanation: row.question.explanation,
+    };
+  });
 }

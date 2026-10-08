@@ -103,6 +103,7 @@ describe("practice API authentication", () => {
     const response = await request(method, path, body);
     expect(response.status).toBe(401);
     expect((await json(response)).error.code).toBe("UNAUTHENTICATED");
+    expect(practiceService.submitPracticeAnswer).not.toHaveBeenCalled();
   });
 });
 
@@ -165,7 +166,7 @@ describe("practice question API", () => {
       correctOption: { optionKey: "B", text: "Layer 3" },
       explanation: "Routers operate at Layer 3.",
     });
-    expect(practiceService.submitPracticeAnswer).toHaveBeenCalledWith(questionId, "A");
+    expect(practiceService.submitPracticeAnswer).toHaveBeenCalledWith(questionId, "A", currentUser!.id);
   });
 
   it("returns 404 when a question or its topic is disabled", async () => {
@@ -189,5 +190,46 @@ describe("practice question API", () => {
     const invalid = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "Z" });
     expect(invalid.status).toBe(400);
     expect((await json(invalid)).error.code).toBe("INVALID_OPTION");
+  });
+
+  it("rejects client-supplied identity and grading fields before calling the service", async () => {
+    const response = await request("POST", `/practice/questions/${questionId}/answer`, {
+      optionKey: "A",
+      userId: "00000000-0000-0000-0000-000000000099",
+      isCorrect: true,
+      topicId,
+    });
+    expect(response.status).toBe(400);
+    expect(practiceService.submitPracticeAnswer).not.toHaveBeenCalled();
+  });
+
+  it("uses each authenticated learner's internal ID, not the Clerk ID", async () => {
+    practiceService.submitPracticeAnswer.mockResolvedValue({
+      isCorrect: true,
+      correctOption: { optionKey: "B", text: "Layer 3" },
+      explanation: "Routers operate at Layer 3.",
+    });
+    await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
+    const firstId = currentUser!.id;
+    currentUser = { ...currentUser, id: "00000000-0000-0000-0000-000000000002" };
+    await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
+    expect(practiceService.submitPracticeAnswer).toHaveBeenNthCalledWith(1, questionId, "B", firstId);
+    expect(practiceService.submitPracticeAnswer).toHaveBeenNthCalledWith(2, questionId, "B", currentUser.id);
+  });
+
+  it("does not report grading success when persistence fails", async () => {
+    practiceService.submitPracticeAnswer.mockRejectedValue(new Error("Database insert failed"));
+    const response = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
+    expect(response.status).toBe(500);
+    expect(await json(response)).toEqual({
+      error: { code: "INTERNAL_ERROR", message: "Practice answer could not be submitted." },
+    });
+  });
+
+  it("rejects disabled learners without calling the practice service", async () => {
+    currentUser = { ...currentUser, status: "DISABLED" };
+    const response = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
+    expect(response.status).toBe(403);
+    expect(practiceService.submitPracticeAnswer).not.toHaveBeenCalled();
   });
 });

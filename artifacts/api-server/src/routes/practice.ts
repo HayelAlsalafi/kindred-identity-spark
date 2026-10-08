@@ -65,6 +65,13 @@ router.post(
   "/practice/questions/:questionId/answer",
   requireAuthenticatedUser,
   async (req, res): Promise<void> => {
+    // Fail closed if the authentication middleware did not attach a local user.
+    if (!req.dbUser) {
+      res.status(401).json({
+        error: { code: "UNAUTHENTICATED", message: "Authentication is required." },
+      });
+      return;
+    }
     const questionId = String(req.params["questionId"] ?? "");
     if (!UUID.test(questionId)) {
       notFound(res);
@@ -80,7 +87,7 @@ router.post(
     }
 
     try {
-      const result = await submitPracticeAnswer(questionId, parsedBody.data.optionKey);
+      const result = await submitPracticeAnswer(questionId, parsedBody.data.optionKey, req.dbUser.id);
       if (!result) {
         notFound(res);
         return;
