@@ -11,6 +11,7 @@ import { Link, Redirect, Route, Switch, Router as WouterRouter, useLocation } fr
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AdminTopicManager } from '@/components/admin-topics';
 import { AdminQuestionManager } from '@/components/admin-questions';
+import { PracticeWorkspace } from '@/components/practice-workspace';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -266,13 +267,16 @@ function ProgressBar({ value }: { value: number }) {
 
 function TopicCard({ topic, index }: { topic: TopicSummary; index: number }) {
   return (
-    <Link href={`/topics#${topic.slug}`} id={topic.slug} className="topic-card" data-testid={`card-topic-${topic.id}`}>
+    <article id={topic.slug} className="topic-card" data-testid={`card-topic-${topic.id}`}>
       <div className="topic-top">
         <span className="topic-index">{String(index + 1).padStart(2, '0')} / 10</span>
         <span className="topic-accuracy">{topic.attemptedCount > 0 ? `${Math.round(topic.accuracy)}% accuracy` : 'Not started'}</span>
       </div>
       <h3 className="topic-name">{topic.name}</h3>
       <p className="topic-description">{topic.description}</p>
+      <Link href={`/practice?topicId=${encodeURIComponent(topic.id)}`} className="topic-practice-link" data-testid={`link-practice-topic-${topic.id}`}>
+        Start practice <ArrowRight size={13} />
+      </Link>
       <div className="topic-bottom">
         <div className="topic-stats">
           <span><span className="topic-stat-strong">{topic.attemptedCount}</span> / {topic.questionCount} attempted</span>
@@ -280,7 +284,7 @@ function TopicCard({ topic, index }: { topic: TopicSummary; index: number }) {
         </div>
         <ProgressBar value={topic.progressPercent} />
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -389,25 +393,23 @@ function TopicsPage() {
 }
 
 function PracticePage() {
-  const topicsQuery = useListTopics();
-  const topics = topicsQuery.data ?? [];
-  const summaryQuery = useGetDashboardSummary();
-  const focus = summaryQuery.data?.focusTopic;
+  const { isLoaded, isSignedIn } = useAuth();
   return (
     <div className="page-wrap">
-      <PageHeader eyebrow="Practice / foundation mode" title="Practice with a clean signal." lead="This is the entry point for foundation practice: focused questions, no distracting modes, and a direct path back to the topic that needs you." />
+      <PageHeader eyebrow="Practice / foundation mode" title="Practice with a clean signal." lead="Bring one question into focus. Choose deliberately, submit for server-checked feedback, then move on when you are ready." />
       <div className="practice-frame">
         <section className="practice-hero reveal reveal-1">
-          <div className="eyebrow" style={{ color: '#f5916f' }}>Ready when you are</div>
-          <h2>{focus ? `Continue with ${focus.name}.` : 'Build your first signal.'}</h2>
-          <p>{focus ? 'Your dashboard has identified a useful next topic. Use this space to turn recognition into recall, one question at a time.' : 'Choose a topic from the map to establish your first practice session. The foundation track will keep the route deliberately small.'}</p>
-          <Link href={focus ? `/topics#${focus.slug}` : '/topics'} className="button-primary" data-testid="link-practice-topic">{focus ? 'Open focus topic' : 'Choose a topic'} <ArrowRight size={15} /></Link>
+          <div className="eyebrow" style={{ color: '#f5916f' }}>Recall / in sequence</div>
+          <h2>Make the concept answer back.</h2>
+          <p>Work through active CCNA topics one prompt at a time. The question stays neutral until you submit; the answer service returns the result and explanation.</p>
+          <a href="#practice-session" className="button-primary" data-testid="link-enter-practice"><Target size={15} /> Choose a topic <ArrowRight size={15} /></a>
         </section>
         <div className="practice-info reveal reveal-2">
-          <div className="practice-info-card"><div className="practice-info-number">01</div><div className="practice-info-title">Pick one domain</div><p className="practice-info-copy">Avoid context switching. The topic map tells you where to go next.</p></div>
-          <div className="practice-info-card"><div className="practice-info-number">02</div><div className="practice-info-title">Answer deliberately</div><p className="practice-info-copy">Treat every question as a packet to inspect, not a score to chase.</p></div>
-          <div className="practice-info-card"><div className="practice-info-number">{topics.length ? String(topics.length).padStart(2, '0') : '--'}</div><div className="practice-info-title">Active domains</div><p className="practice-info-copy">{topics.length ? 'The current catalog is ready to browse.' : 'The catalog is waiting for its first topics.'}</p></div>
+          <div className="practice-info-card"><div className="practice-info-number">01</div><div className="practice-info-title">Select a domain</div><p className="practice-info-copy">Stay with one active topic long enough to retrieve what you know.</p></div>
+          <div className="practice-info-card"><div className="practice-info-number">02</div><div className="practice-info-title">Commit an answer</div><p className="practice-info-copy">No correctness hints appear before the answer is checked.</p></div>
+          <div className="practice-info-card"><div className="practice-info-number">03</div><div className="practice-info-title">Read the reasoning</div><p className="practice-info-copy">Use the server-returned explanation to close the loop.</p></div>
         </div>
+        <div id="practice-session"><PracticeWorkspace isAuthLoaded={isLoaded} isSignedIn={Boolean(isSignedIn)} /></div>
       </div>
     </div>
   );
