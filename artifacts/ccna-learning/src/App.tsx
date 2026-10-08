@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useAuth, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { ArrowRight, BookOpen, Check, ChevronRight, CircleAlert, CircleGauge, Clock3, Layers3, LockKeyhole, LogIn, LogOut, Network, Radar, ShieldCheck, Target, UserRound } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, ChevronRight, CircleAlert, CircleGauge, Clock3, History, Layers3, LockKeyhole, LogIn, LogOut, Network, Radar, ShieldCheck, Target, UserRound } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetAdminAccess, useGetCurrentUser, useHealthCheck, useListTopics, useGetDashboardSummary, getGetCurrentUserQueryKey, getGetAdminAccessQueryKey } from '@workspace/api-client-react';
 import type { CurrentUser, TopicSummary } from '@workspace/api-client-react';
@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { AdminTopicManager } from '@/components/admin-topics';
 import { AdminQuestionManager } from '@/components/admin-questions';
 import { PracticeWorkspace } from '@/components/practice-workspace';
+import { PracticeHistoryPage } from '@/pages/practice-history';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -65,7 +66,8 @@ const clerkAppearance = {
 const navItems = [
   { href: '/', label: 'Overview', icon: CircleGauge, exact: true },
   { href: '/topics', label: 'Topic map', icon: Layers3 },
-  { href: '/practice', label: 'Practice', icon: Target },
+  { href: '/practice', label: 'Practice', icon: Target, exact: true },
+  { href: '/practice/history', label: 'Practice History', icon: History },
   { href: '/admin', label: 'Admin access', icon: ShieldCheck },
 ];
 
@@ -583,6 +585,7 @@ function Router() {
         <Route path="/sign-up/*?"><SignUpPage /></Route>
         <Route path="/"><SharedShell><Dashboard /></SharedShell></Route>
         <Route path="/topics"><SharedShell><TopicsPage /></SharedShell></Route>
+        <Route path="/practice/history"><SharedShell><PracticeHistoryPage /></SharedShell></Route>
         <Route path="/practice"><SharedShell><PracticePage /></SharedShell></Route>
         <Route path="/admin/questions"><SharedShell><AdminPage /></SharedShell></Route>
         <Route path="/admin"><SharedShell><AdminPage /></SharedShell></Route>

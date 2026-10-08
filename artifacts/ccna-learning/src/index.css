@@ -709,3 +709,55 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .practice-info-card { min-height: 130px; }
   .admin-message { padding: 28px 24px; }
 }
+
+/* Practice history follows the shared paper, ink and signal palette. */
+.history-panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-bright); }
+.history-toolbar, .history-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 18px 22px; }
+.history-toolbar { border-bottom: 1px solid var(--line); }
+.history-note, .history-pagination p { margin: 0; color: var(--ink-soft); font-size: 11px; }
+.history-state { min-height: 260px; border: 0; border-radius: 0; }
+.history-loading-row { height: 32px; margin-top: 13px; }
+.history-empty { align-items: flex-start; gap: 12px; }
+.history-empty h2, .history-empty p { margin: 0; }
+.history-empty h2 { font-size: 20px; letter-spacing: -.04em; }
+.history-empty p { color: var(--ink-soft); font-size: 13px; line-height: 1.7; }
+.history-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; }
+.history-table th { padding: 15px 18px; border-bottom: 1px solid var(--line); color: var(--ink-soft); font: 700 10px var(--app-font-mono); text-transform: uppercase; letter-spacing: .05em; }
+.history-table th:nth-child(1), .history-table th:nth-child(2) { width: 24%; }
+.history-table th:nth-child(3) { width: 14%; }
+.history-table th:nth-child(4) { width: 15%; }
+.history-table th:nth-child(5) { width: 23%; }
+.history-table td { padding: 18px; border-bottom: 1px solid var(--line); color: var(--ink-soft); font-size: 12px; vertical-align: top; overflow-wrap: anywhere; }
+.history-table code { color: var(--ink); font: 11px var(--app-font-mono); line-height: 1.7; }
+.history-table time { line-height: 1.7; }
+.history-answer { display: inline-block; min-width: 26px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font: 700 12px var(--app-font-mono); }
+.history-result { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+.history-result svg { flex-shrink: 0; }
+.history-result.correct { background: var(--teal-soft); color: #285b5c; }
+.history-result.incorrect { background: #f8e8df; color: #754938; }
+.history-pagination-actions { display: flex; gap: 8px; }
+.history-panel button:disabled, .practice-history-page .practice-access-card button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.practice-history-page .practice-access-card .button-quiet { margin-left: 10px; }
+.history-state .button-quiet + .button-quiet { margin-left: 8px; }
+
+@media (max-width: 1020px) {
+  .history-table th, .history-table td { padding: 14px 10px; }
+}
+@media (max-width: 1020px) {
+  .history-toolbar, .history-pagination { padding: 16px; }
+  .history-table, .history-table tbody { display: block; }
+  .history-table thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .history-table tr { display: grid; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  .history-table td { display: grid; grid-template-columns: minmax(90px, .8fr) minmax(0, 1.4fr); align-items: start; gap: 14px; padding: 7px 0; border: 0; }
+  .history-table td::before { content: attr(data-label); color: var(--ink-soft); font: 700 10px var(--app-font-mono); line-height: 1.8; }
+  .history-answer, .history-result { justify-self: start; }
+  .history-pagination-actions { width: 100%; }
+  .history-pagination-actions button { flex: 1; }
+}
+@media (max-width: 720px) {
+  .mobile-top { gap: 10px; padding-inline: 12px; }
+  .mobile-brand { min-width: 0; font-size: 12px; }
+  .mobile-brand .brand-mark { flex-shrink: 0; }
+  .mobile-nav { flex-shrink: 0; }
+  .mobile-nav a { width: 30px; }
+}
