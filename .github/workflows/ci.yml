@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, phase-5a-attempt-persistence, phase-5b-practice-history]
 
 permissions:
   contents: read
