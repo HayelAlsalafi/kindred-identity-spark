@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, lt, or, sql } from "drizzle-orm";
 import {
   db as defaultDb,
   practiceAttemptsTable,
@@ -140,4 +140,119 @@ export async function submitPracticeAnswer(
       explanation: row.question.explanation,
     };
   });
+}
+
+
+const HISTORY_LIMIT_DEFAULT = 20;
+const HISTORY_LIMIT_MAX = 100;
+const HISTORY_CURSOR_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+type HistoryCursor = {
+  submittedAt: string;
+  id: string;
+};
+
+function decodeHistoryCursor(cursor: string): HistoryCursor {
+  if (
+    cursor.length === 0 ||
+    cursor.length > 512 ||
+    !HISTORY_CURSOR_PATTERN.test(cursor)
+  ) {
+    throw new Error("Invalid practice history cursor");
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(
+      Buffer.from(cursor, "base64url").toString("utf8"),
+    );
+
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Invalid cursor");
+    }
+
+    const value = parsed as Record<string, unknown>;
+    const timestamp = value.submittedAt;
+    const id = value.id;
+
+    if (
+      typeof timestamp !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) ||
+      !Number.isFinite(Date.parse(timestamp)) ||
+      new Date(timestamp).toISOString() !== timestamp ||
+      typeof id !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+    ) {
+      throw new Error("Invalid cursor fields");
+    }
+
+    return { submittedAt: timestamp, id };
+  } catch {
+    throw new Error("Invalid practice history cursor");
+  }
+}
+
+/**
+ * Returns only the authenticated user's attempts in stable descending order.
+ * The cursor encodes the last row's timestamp and UUID, never a user ID.
+ */
+export async function getPracticeHistory(
+  userId: string,
+  limit: number = HISTORY_LIMIT_DEFAULT,
+  cursor?: string,
+  db: Pick<Db, "select"> = defaultDb,
+) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > HISTORY_LIMIT_MAX) {
+    throw new Error("Invalid practice history limit");
+  }
+
+  const decoded = cursor === undefined ? undefined : decodeHistoryCursor(cursor);
+
+  const cursorFilter = decoded
+    ? or(
+        lt(practiceAttemptsTable.submittedAt, new Date(decoded.submittedAt)),
+        and(
+          eq(practiceAttemptsTable.submittedAt, new Date(decoded.submittedAt)),
+          lt(practiceAttemptsTable.id, decoded.id),
+        ),
+      )
+    : undefined;
+
+  const rows = await db
+    .select({
+      id: practiceAttemptsTable.id,
+      questionId: practiceAttemptsTable.questionId,
+      topicId: practiceAttemptsTable.topicId,
+      selectedOptionKey: practiceAttemptsTable.selectedOptionKey,
+      isCorrect: practiceAttemptsTable.isCorrect,
+      submittedAt: practiceAttemptsTable.submittedAt,
+    })
+    .from(practiceAttemptsTable)
+    .where(and(eq(practiceAttemptsTable.userId, userId), cursorFilter))
+    .orderBy(
+      desc(practiceAttemptsTable.submittedAt),
+      desc(practiceAttemptsTable.id),
+    )
+    .limit(limit + 1);
+
+  const hasMore = rows.length > limit;
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+
+  const nextCursor =
+    hasMore && last
+      ? Buffer.from(
+          JSON.stringify({
+            submittedAt: last.submittedAt.toISOString(),
+            id: last.id,
+          }),
+        ).toString("base64url")
+      : null;
+
+  return {
+    items: page.map((row) => ({
+      ...row,
+      submittedAt: row.submittedAt.toISOString(),
+    })),
+    nextCursor,
+  };
 }

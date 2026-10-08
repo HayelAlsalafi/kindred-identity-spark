@@ -358,6 +358,20 @@ export interface PracticeQuestion {
   options: PracticeQuestionOption[];
 }
 
+export interface PracticeHistoryItem {
+  id: string;
+  questionId: string;
+  topicId: string;
+  selectedOptionKey: string;
+  isCorrect: boolean;
+  submittedAt: string;
+}
+
+export interface PracticeHistoryResponse {
+  items: PracticeHistoryItem[];
+  nextCursor: string | null;
+}
+
 export interface PracticeAnswerInput {
   /**
      * @minLength 1
@@ -477,6 +491,18 @@ export type ErrorResponseError = {
 export interface ErrorResponse {
   error: ErrorResponseError;
 }
+
+export type GetPracticeHistoryParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * Opaque pagination cursor returned by a previous response.
+ */
+cursor?: string;
+};
 
 export type AdminListQuestionsParams = {
 topicId?: string;
