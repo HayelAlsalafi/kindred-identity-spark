@@ -161,6 +161,33 @@ export const GetQuestionResponse = zod.object({
 
 
 /**
+ * Returns only the authenticated user's attempts, newest first, using cursor-based pagination.
+ * @summary List authenticated user's practice attempts
+ */
+export const getPracticeHistoryQueryLimitDefault = 20;
+export const getPracticeHistoryQueryLimitMax = 100;
+
+
+
+export const GetPracticeHistoryQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getPracticeHistoryQueryLimitMax).default(getPracticeHistoryQueryLimitDefault),
+  "cursor": zod.coerce.string().optional().describe('Opaque pagination cursor returned by a previous response.')
+})
+
+export const GetPracticeHistoryResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "questionId": zod.string().uuid(),
+  "topicId": zod.string().uuid(),
+  "selectedOptionKey": zod.string(),
+  "isCorrect": zod.boolean(),
+  "submittedAt": zod.coerce.date()
+})),
+  "nextCursor": zod.string().nullable()
+})
+
+
+/**
  * Returns one random ACTIVE question from an ACTIVE topic. Answer keys, explanations, and author-only fields are excluded.
  * @summary Fetch a practice question for an active topic
  */
@@ -187,7 +214,7 @@ export const GetPracticeQuestionResponse = zod.object({
 
 
 /**
- * Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. This foundation does not record attempts.
+ * Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. Successful submissions are persisted as practice attempts for the authenticated user.
  * @summary Submit and grade an answer to an active practice question
  */
 export const SubmitPracticeAnswerParams = zod.object({

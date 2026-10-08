@@ -24,6 +24,7 @@ vi.mock("@workspace/db", () => ({
 }));
 
 const practiceService = {
+  getPracticeHistory: vi.fn(),
   getPracticeQuestionForTopic: vi.fn(),
   submitPracticeAnswer: vi.fn(),
 };
@@ -67,7 +68,10 @@ function signIn(signedIn: boolean) {
     currentUser = null;
     return;
   }
-  getAuthMock.mockReturnValue({ userId: "learner_x", sessionClaims: { email: "learner@example.com" } });
+  getAuthMock.mockReturnValue({
+    userId: "learner_x",
+    sessionClaims: { email: "learner@example.com" },
+  });
   const now = new Date();
   currentUser = {
     id: "00000000-0000-0000-0000-000000000001",
@@ -96,6 +100,7 @@ beforeEach(() => Object.values(practiceService).forEach((service) => service.moc
 
 describe("practice API authentication", () => {
   it.each([
+    ["GET", "/practice/history", undefined],
     ["GET", `/practice/topics/${topicId}/question`, undefined],
     ["POST", `/practice/questions/${questionId}/answer`, { optionKey: "A" }],
   ] as const)("requires an authenticated learner for %s %s", async (method, path, body) => {
@@ -129,7 +134,9 @@ describe("practice question API", () => {
     const response = await request("GET", `/practice/topics/${topicId}/question`);
     expect(response.status).toBe(200);
     const payload = await response.text();
-    expect(payload).not.toMatch(/isCorrect|explanation|correctOption|referenceNotes|Layer 3 is correct/i);
+    expect(payload).not.toMatch(
+      /isCorrect|explanation|correctOption|referenceNotes|Layer 3 is correct/i,
+    );
     expect(JSON.parse(payload)).toEqual({
       id: questionId,
       questionCode: "CCNA-Q-000123",
@@ -159,14 +166,20 @@ describe("practice question API", () => {
       explanation: "Routers operate at Layer 3.",
     });
 
-    const response = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "A" });
+    const response = await request("POST", `/practice/questions/${questionId}/answer`, {
+      optionKey: "A",
+    });
     expect(response.status).toBe(200);
     expect(await json(response)).toEqual({
       isCorrect: false,
       correctOption: { optionKey: "B", text: "Layer 3" },
       explanation: "Routers operate at Layer 3.",
     });
-    expect(practiceService.submitPracticeAnswer).toHaveBeenCalledWith(questionId, "A", currentUser!.id);
+    expect(practiceService.submitPracticeAnswer).toHaveBeenCalledWith(
+      questionId,
+      "A",
+      currentUser!.id,
+    );
   });
 
   it("returns 404 when a question or its topic is disabled", async () => {
@@ -174,20 +187,26 @@ describe("practice question API", () => {
     practiceService.submitPracticeAnswer.mockResolvedValue(null);
 
     const fetchResponse = await request("GET", `/practice/topics/${topicId}/question`);
-    const submitResponse = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "A" });
+    const submitResponse = await request("POST", `/practice/questions/${questionId}/answer`, {
+      optionKey: "A",
+    });
     expect(fetchResponse.status).toBe(404);
     expect(submitResponse.status).toBe(404);
   });
 
   it("rejects malformed answer bodies and unknown option keys", async () => {
-    const malformed = await request("POST", `/practice/questions/${questionId}/answer`, { answer: "A" });
+    const malformed = await request("POST", `/practice/questions/${questionId}/answer`, {
+      answer: "A",
+    });
     expect(malformed.status).toBe(400);
     expect(practiceService.submitPracticeAnswer).not.toHaveBeenCalled();
 
     practiceService.submitPracticeAnswer.mockRejectedValue(
       new PracticeApiError(400, "INVALID_OPTION", "Selected option is not part of this question."),
     );
-    const invalid = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "Z" });
+    const invalid = await request("POST", `/practice/questions/${questionId}/answer`, {
+      optionKey: "Z",
+    });
     expect(invalid.status).toBe(400);
     expect((await json(invalid)).error.code).toBe("INVALID_OPTION");
   });
@@ -213,13 +232,25 @@ describe("practice question API", () => {
     const firstId = currentUser!.id;
     currentUser = { ...currentUser, id: "00000000-0000-0000-0000-000000000002" };
     await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
-    expect(practiceService.submitPracticeAnswer).toHaveBeenNthCalledWith(1, questionId, "B", firstId);
-    expect(practiceService.submitPracticeAnswer).toHaveBeenNthCalledWith(2, questionId, "B", currentUser.id);
+    expect(practiceService.submitPracticeAnswer).toHaveBeenNthCalledWith(
+      1,
+      questionId,
+      "B",
+      firstId,
+    );
+    expect(practiceService.submitPracticeAnswer).toHaveBeenNthCalledWith(
+      2,
+      questionId,
+      "B",
+      currentUser.id,
+    );
   });
 
   it("does not report grading success when persistence fails", async () => {
     practiceService.submitPracticeAnswer.mockRejectedValue(new Error("Database insert failed"));
-    const response = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
+    const response = await request("POST", `/practice/questions/${questionId}/answer`, {
+      optionKey: "B",
+    });
     expect(response.status).toBe(500);
     expect(await json(response)).toEqual({
       error: { code: "INTERNAL_ERROR", message: "Practice answer could not be submitted." },
@@ -228,8 +259,87 @@ describe("practice question API", () => {
 
   it("rejects disabled learners without calling the practice service", async () => {
     currentUser = { ...currentUser, status: "DISABLED" };
-    const response = await request("POST", `/practice/questions/${questionId}/answer`, { optionKey: "B" });
+    const response = await request("POST", `/practice/questions/${questionId}/answer`, {
+      optionKey: "B",
+    });
     expect(response.status).toBe(403);
     expect(practiceService.submitPracticeAnswer).not.toHaveBeenCalled();
+  });
+});
+
+describe("practice history API", () => {
+  beforeEach(() => signIn(true));
+
+  it("returns only the history DTO and uses the authenticated internal user ID", async () => {
+    const attempt = {
+      id: "55555555-5555-4555-8555-555555555555",
+      questionId,
+      topicId,
+      selectedOptionKey: "B",
+      isCorrect: true,
+      submittedAt: "2026-10-08T10:00:00.000Z",
+    };
+
+    practiceService.getPracticeHistory.mockResolvedValue({
+      items: [attempt],
+      nextCursor: "next_page_cursor",
+    });
+
+    const response = await request("GET", "/practice/history?limit=1");
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await json(response)).toEqual({
+      items: [attempt],
+      nextCursor: "next_page_cursor",
+    });
+    expect(practiceService.getPracticeHistory).toHaveBeenCalledWith(currentUser!.id, 1, undefined);
+  });
+
+  it.each([
+    "?limit=0",
+    "?limit=101",
+    "?limit=abc",
+    "?limit=1.5",
+    "?limit=-1",
+    "?limit=2&limit=3",
+    "?cursor=invalid!",
+    "?cursor=",
+  ])("rejects invalid pagination parameters: %s", async (query) => {
+    const response = await request("GET", "/practice/history" + query);
+    expect(response.status).toBe(400);
+    expect(practiceService.getPracticeHistory).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a malformed encoded cursor", async () => {
+    practiceService.getPracticeHistory.mockRejectedValue(
+      new Error("Invalid practice history cursor"),
+    );
+
+    const response = await request("GET", "/practice/history?cursor=abc");
+    expect(response.status).toBe(400);
+    expect((await json(response)).error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("does not expose database errors", async () => {
+    practiceService.getPracticeHistory.mockRejectedValue(
+      new Error("Sensitive database connection details"),
+    );
+
+    const response = await request("GET", "/practice/history");
+    expect(response.status).toBe(500);
+    expect(await json(response)).toEqual({
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Practice history could not be fetched.",
+      },
+    });
+  });
+
+  it("rejects disabled users before querying history", async () => {
+    currentUser = { ...currentUser, status: "DISABLED" };
+
+    const response = await request("GET", "/practice/history");
+    expect(response.status).toBe(403);
+    expect(practiceService.getPracticeHistory).not.toHaveBeenCalled();
   });
 });

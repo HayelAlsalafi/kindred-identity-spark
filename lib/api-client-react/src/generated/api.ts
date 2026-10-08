@@ -32,10 +32,12 @@ import type {
   CurrentUserResponse,
   DashboardSummary,
   ErrorResponse,
+  GetPracticeHistoryParams,
   HealthStatus,
   LearnerQuestion,
   PracticeAnswerInput,
   PracticeAnswerResult,
+  PracticeHistoryResponse,
   PracticeQuestion,
   TopicSummary
 } from './api.schemas';
@@ -535,6 +537,91 @@ export function useGetQuestion<TData = Awaited<ReturnType<typeof getQuestion>>, 
 
 
 
+export const getGetPracticeHistoryUrl = (params?: GetPracticeHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/practice/history?${stringifiedParams}` : `/api/practice/history`
+}
+
+/**
+ * Returns only the authenticated user's attempts, newest first, using cursor-based pagination.
+ * @summary List authenticated user's practice attempts
+ */
+export const getPracticeHistory = async (params?: GetPracticeHistoryParams, options?: Parameters<typeof customFetch>[1]): Promise<PracticeHistoryResponse> => {
+
+  return customFetch<PracticeHistoryResponse>(getGetPracticeHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPracticeHistoryQueryKey = (params?: GetPracticeHistoryParams,) => {
+    return [
+    `/api/practice/history`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPracticeHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getPracticeHistory>>, TError = ErrorType<ErrorResponse>>(params?: GetPracticeHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPracticeHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPracticeHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPracticeHistory>>> = ({ signal }) => getPracticeHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPracticeHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPracticeHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getPracticeHistory>>>
+export type GetPracticeHistoryQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List authenticated user's practice attempts
+ */
+
+export function useGetPracticeHistory<TData = Awaited<ReturnType<typeof getPracticeHistory>>, TError = ErrorType<ErrorResponse>>(
+ params?: GetPracticeHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPracticeHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPracticeHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetPracticeQuestionUrl = (topicId: string,) => {
 
 
@@ -622,7 +709,7 @@ export const getSubmitPracticeAnswerUrl = (questionId: string,) => {
 }
 
 /**
- * Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. This foundation does not record attempts.
+ * Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. Successful submissions are persisted as practice attempts for the authenticated user.
  * @summary Submit and grade an answer to an active practice question
  */
 export const submitPracticeAnswer = async (questionId: string,

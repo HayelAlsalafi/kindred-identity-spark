@@ -154,6 +154,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /practice/history:
+    get:
+      operationId: getPracticeHistory
+      tags: [practice]
+      summary: List authenticated user's practice attempts
+      description: Returns only the authenticated user's attempts, newest first, using cursor-based pagination.
+      security:
+        - clerkSession: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Opaque pagination cursor returned by a previous response.
+      responses:
+        "200":
+          description: Paginated practice attempt history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeHistoryResponse"
+        "400":
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Practice history could not be fetched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /practice/topics/{topicId}/question:
     get:
       operationId: getPracticeQuestion
@@ -205,7 +259,7 @@ paths:
       operationId: submitPracticeAnswer
       tags: [practice]
       summary: Submit and grade an answer to an active practice question
-      description: Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. This foundation does not record attempts.
+      description: Validates that the selected option belongs to the ACTIVE question in an ACTIVE topic, then returns correctness and the answer explanation. Successful submissions are persisted as practice attempts for the authenticated user.
       security:
         - clerkSession: []
       parameters:
@@ -966,6 +1020,39 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PracticeQuestionOption"
+    PracticeHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [id, questionId, topicId, selectedOptionKey, isCorrect, submittedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionId:
+          type: string
+          format: uuid
+        topicId:
+          type: string
+          format: uuid
+        selectedOptionKey:
+          type: string
+        isCorrect:
+          type: boolean
+        submittedAt:
+          type: string
+          format: date-time
+    PracticeHistoryResponse:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PracticeHistoryItem"
+        nextCursor:
+          type: string
+          nullable: true
     PracticeAnswerInput:
       type: object
       additionalProperties: false
