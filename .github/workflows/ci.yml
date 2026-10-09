@@ -37,6 +37,12 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
+      - name: Typecheck Orval configurations
+        run: pnpm exec tsc -p lib/api-spec/tsconfig.codegen.json
+
+      - name: Frontend tests
+        run: pnpm --filter @workspace/ccna-learning test
+
       # DB integration suites intentionally require RUN_DB_TESTS=1 and a
       # DATABASE_URL. CI does not expose the production Neon database to PRs.
       - name: API tests (non-DB)

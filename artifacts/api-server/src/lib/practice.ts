@@ -176,9 +176,9 @@ function decodeHistoryCursor(cursor: string): HistoryCursor {
 
     if (
       typeof timestamp !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.(?:\d{3}|\d{6})Z$/.test(timestamp) ||
       !Number.isFinite(Date.parse(timestamp)) ||
-      new Date(timestamp).toISOString() !== timestamp ||
+      new Date(timestamp).toISOString() !== timestamp.replace(/\.(\d{3})\d{3}Z$/, ".$1Z") ||
       typeof id !== "string" ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
     ) {
@@ -200,6 +200,7 @@ export async function getPracticeHistory(
   limit: number = HISTORY_LIMIT_DEFAULT,
   cursor?: string,
   db: Pick<Db, "select"> = defaultDb,
+  includeDetails: boolean = false,
 ) {
   if (!Number.isInteger(limit) || limit < 1 || limit > HISTORY_LIMIT_MAX) {
     throw new Error("Invalid practice history limit");
@@ -209,15 +210,15 @@ export async function getPracticeHistory(
 
   const cursorFilter = decoded
     ? or(
-        lt(practiceAttemptsTable.submittedAt, new Date(decoded.submittedAt)),
+        lt(practiceAttemptsTable.submittedAt, sql`${decoded.submittedAt}::timestamptz`),
         and(
-          eq(practiceAttemptsTable.submittedAt, new Date(decoded.submittedAt)),
+          eq(practiceAttemptsTable.submittedAt, sql`${decoded.submittedAt}::timestamptz`),
           lt(practiceAttemptsTable.id, decoded.id),
         ),
       )
     : undefined;
 
-  const rows = await db
+  let historyQuery = db
     .select({
       id: practiceAttemptsTable.id,
       questionId: practiceAttemptsTable.questionId,
@@ -225,8 +226,24 @@ export async function getPracticeHistory(
       selectedOptionKey: practiceAttemptsTable.selectedOptionKey,
       isCorrect: practiceAttemptsTable.isCorrect,
       submittedAt: practiceAttemptsTable.submittedAt,
+      // Preserve PostgreSQL microseconds for the opaque cursor, not the DTO.
+      submittedAtExact: sql<string>`to_char(${practiceAttemptsTable.submittedAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+      ...(includeDetails ? {
+        questionCode: sql<string | null>`${questionsTable.questionCode}`,
+        topicName: sql<string | null>`${topicsTable.name}`,
+      } : {}),
     })
     .from(practiceAttemptsTable)
+    .$dynamic();
+
+  if (includeDetails) {
+    // Preserve missing/disabled references and the submission-time topic.
+    historyQuery = historyQuery
+      .leftJoin(questionsTable, eq(questionsTable.id, practiceAttemptsTable.questionId))
+      .leftJoin(topicsTable, eq(topicsTable.id, practiceAttemptsTable.topicId));
+  }
+
+  const rows = await historyQuery
     .where(and(eq(practiceAttemptsTable.userId, userId), cursorFilter))
     .orderBy(
       desc(practiceAttemptsTable.submittedAt),
@@ -242,14 +259,14 @@ export async function getPracticeHistory(
     hasMore && last
       ? Buffer.from(
           JSON.stringify({
-            submittedAt: last.submittedAt.toISOString(),
+            submittedAt: last.submittedAtExact,
             id: last.id,
           }),
         ).toString("base64url")
       : null;
 
   return {
-    items: page.map((row) => ({
+    items: page.map(({ submittedAtExact: _exact, ...row }) => ({
       ...row,
       submittedAt: row.submittedAt.toISOString(),
     })),

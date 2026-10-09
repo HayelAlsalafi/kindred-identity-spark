@@ -2,9 +2,13 @@ import { asc, count, eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   GetDashboardSummaryResponse,
+  GetLearningProgressResponse,
   ListTopicsResponse,
 } from "@workspace/api-zod";
 import { db, topicsTable } from "@workspace/db";
+
+import { requireAuthenticatedUser } from "../middlewares/auth";
+import { getLearningProgress } from "../lib/learning-progress";
 
 const router: IRouter = Router();
 
@@ -63,5 +67,52 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
 
   res.json(GetDashboardSummaryResponse.parse(data));
 });
+
+router.get(
+  "/learning/progress",
+  (_req, res, next) => {
+    // Set before authentication so errors also cannot cache personal metrics.
+    res.set("Cache-Control", "private, no-store");
+    next();
+  },
+  requireAuthenticatedUser,
+  async (req, res): Promise<void> => {
+    if (!req.dbUser) {
+      res.status(401).json({
+        error: { code: "UNAUTHENTICATED", message: "Authentication is required." },
+      });
+      return;
+    }
+
+    if (
+      new URL(req.originalUrl, "http://localhost").searchParams.size > 0 ||
+      req.body !== undefined ||
+      Number(req.headers["content-length"] ?? 0) > 0 ||
+      req.headers["transfer-encoding"] !== undefined
+    ) {
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Query parameters and request bodies are not supported.",
+        },
+      });
+      return;
+    }
+
+    try {
+      const result = await getLearningProgress(req.dbUser.id);
+      res.json(GetLearningProgressResponse.parse(result));
+    } catch {
+      // Do not log database query text, bound values or connection details.
+      req.log.error("Could not load learning progress");
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Learning progress could not be loaded.",
+        },
+      });
+    }
+  },
+);
 
 export default router;

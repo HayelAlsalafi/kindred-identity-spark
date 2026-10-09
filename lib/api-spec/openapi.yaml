@@ -60,6 +60,262 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
+  /learning/progress:
+    get:
+      operationId: getLearningProgress
+      tags:
+        - learning
+      summary: Get the authenticated learner learning progress
+      description: Phase 5C.1 contract only; runtime implementation is scheduled for Phase 5C.2. Returns all-time historical attempt metrics and current available-catalog coverage for the authenticated internal user. Accepts no query parameters or request body; client-supplied userId is rejected. USER and ADMIN accounts receive only their own metrics. Does not include study time, streak days or average duration. See docs/api/learning-progress.md for cohort, rounding and topic-movement rules.
+      security:
+        - clerkSession: []
+      parameters: []
+      responses:
+        "200":
+          description: User-scoped learning summary and per-topic statistics
+          headers:
+            Cache-Control:
+              description: All responses from this private endpoint must prevent storage of personal metrics.
+              schema:
+                type: string
+                enum:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearningProgressResponse"
+              examples:
+                threeAttempts:
+                  summary: Three attempts, two correct, two historical questions
+                  description: "Q1 in topic A: correct then incorrect; Q2 in topic A: correct. Q3 is available but unattempted."
+                  value:
+                    summary:
+                      totalAttempts: 3
+                      correctAttempts: 2
+                      overallAccuracy: 66.67
+                      uniqueQuestionsAttempted: 2
+                      availableQuestionCount: 3
+                      coveredQuestionCount: 2
+                      coveragePercent: 66.67
+                    topics:
+                      - topicId: 11111111-1111-4111-8111-111111111111
+                        topicName: Routing fundamentals
+                        status: ACTIVE
+                        displayOrder: 1
+                        totalAttempts: 3
+                        correctAttempts: 2
+                        accuracy: 66.67
+                        uniqueQuestionsAttempted: 2
+                        availableQuestionCount: 3
+                        coveredQuestionCount: 2
+                        coveragePercent: 66.67
+                noAttempts:
+                  summary: No attempts with two available questions
+                  description: The current catalog has Q1 and Q2 in active topic A. This user has no attempts.
+                  value:
+                    summary:
+                      totalAttempts: 0
+                      correctAttempts: 0
+                      overallAccuracy: 0
+                      uniqueQuestionsAttempted: 0
+                      availableQuestionCount: 2
+                      coveredQuestionCount: 0
+                      coveragePercent: 0
+                    topics:
+                      - topicId: 11111111-1111-4111-8111-111111111111
+                        topicName: Routing fundamentals
+                        status: ACTIVE
+                        displayOrder: 1
+                        totalAttempts: 0
+                        correctAttempts: 0
+                        accuracy: 0
+                        uniqueQuestionsAttempted: 0
+                        availableQuestionCount: 2
+                        coveredQuestionCount: 0
+                        coveragePercent: 0
+                repeatedQuestion:
+                  summary: Five attempts on the same question
+                  description: Q1 was attempted five times, three correctly. Q2 is also available but unattempted. Attempts are five; distinct questions and covered questions are one.
+                  value:
+                    summary:
+                      totalAttempts: 5
+                      correctAttempts: 3
+                      overallAccuracy: 60
+                      uniqueQuestionsAttempted: 1
+                      availableQuestionCount: 2
+                      coveredQuestionCount: 1
+                      coveragePercent: 50
+                    topics:
+                      - topicId: 11111111-1111-4111-8111-111111111111
+                        topicName: Routing fundamentals
+                        status: ACTIVE
+                        displayOrder: 1
+                        totalAttempts: 5
+                        correctAttempts: 3
+                        accuracy: 60
+                        uniqueQuestionsAttempted: 1
+                        availableQuestionCount: 2
+                        coveredQuestionCount: 1
+                        coveragePercent: 50
+                disabledQuestion:
+                  summary: Historical results remain after disabling Q1
+                  description: Starting from threeAttempts, Q1 and unattempted Q3 are disabled. Only Q2 remains available and covered. Historical totals stay unchanged.
+                  value:
+                    summary:
+                      totalAttempts: 3
+                      correctAttempts: 2
+                      overallAccuracy: 66.67
+                      uniqueQuestionsAttempted: 2
+                      availableQuestionCount: 1
+                      coveredQuestionCount: 1
+                      coveragePercent: 100
+                    topics:
+                      - topicId: 11111111-1111-4111-8111-111111111111
+                        topicName: Routing fundamentals
+                        status: ACTIVE
+                        displayOrder: 1
+                        totalAttempts: 3
+                        correctAttempts: 2
+                        accuracy: 66.67
+                        uniqueQuestionsAttempted: 2
+                        availableQuestionCount: 1
+                        coveredQuestionCount: 1
+                        coveragePercent: 100
+                movedQuestion:
+                  summary: Q1 moves from topic A to topic B
+                  description: One correct attempt was recorded while Q1 belonged to topic A. Q1 is now the sole available question in active topic B. Historical attribution stays in A; current coverage moves to B.
+                  value:
+                    summary:
+                      totalAttempts: 1
+                      correctAttempts: 1
+                      overallAccuracy: 100
+                      uniqueQuestionsAttempted: 1
+                      availableQuestionCount: 1
+                      coveredQuestionCount: 1
+                      coveragePercent: 100
+                    topics:
+                      - topicId: 11111111-1111-4111-8111-111111111111
+                        topicName: Routing fundamentals
+                        status: ACTIVE
+                        displayOrder: 1
+                        totalAttempts: 1
+                        correctAttempts: 1
+                        accuracy: 100
+                        uniqueQuestionsAttempted: 1
+                        availableQuestionCount: 0
+                        coveredQuestionCount: 0
+                        coveragePercent: 0
+                      - topicId: 22222222-2222-4222-8222-222222222222
+                        topicName: Network access
+                        status: ACTIVE
+                        displayOrder: 2
+                        totalAttempts: 0
+                        correctAttempts: 0
+                        accuracy: 0
+                        uniqueQuestionsAttempted: 0
+                        availableQuestionCount: 1
+                        coveredQuestionCount: 1
+                        coveragePercent: 100
+                disabledTopic:
+                  summary: Disabled topic with this user historical attempts
+                  description: Topic A is disabled after one correct attempt at Q1. It is retained for this user historical statistics, with zero availability and coverage. Active topic B has two unattempted questions. Other disabled topics without this user history are omitted.
+                  value:
+                    summary:
+                      totalAttempts: 1
+                      correctAttempts: 1
+                      overallAccuracy: 100
+                      uniqueQuestionsAttempted: 1
+                      availableQuestionCount: 2
+                      coveredQuestionCount: 0
+                      coveragePercent: 0
+                    topics:
+                      - topicId: 11111111-1111-4111-8111-111111111111
+                        topicName: Routing fundamentals
+                        status: DISABLED
+                        displayOrder: 1
+                        totalAttempts: 1
+                        correctAttempts: 1
+                        accuracy: 100
+                        uniqueQuestionsAttempted: 1
+                        availableQuestionCount: 0
+                        coveredQuestionCount: 0
+                        coveragePercent: 0
+                      - topicId: 22222222-2222-4222-8222-222222222222
+                        topicName: Network access
+                        status: ACTIVE
+                        displayOrder: 2
+                        totalAttempts: 0
+                        correctAttempts: 0
+                        accuracy: 0
+                        uniqueQuestionsAttempted: 0
+                        availableQuestionCount: 2
+                        coveredQuestionCount: 0
+                        coveragePercent: 0
+                emptyCatalog:
+                  summary: No available catalog and no user history
+                  description: There are no active topics and no attempts for this user. All counters and percentages are zero and topics is an empty array.
+                  value:
+                    summary:
+                      totalAttempts: 0
+                      correctAttempts: 0
+                      overallAccuracy: 0
+                      uniqueQuestionsAttempted: 0
+                      availableQuestionCount: 0
+                      coveredQuestionCount: 0
+                      coveragePercent: 0
+                    topics: []
+        "400":
+          description: Unsupported query parameters or request body, including client-supplied userId
+          headers:
+            Cache-Control:
+              description: All responses from this private endpoint must prevent storage of personal metrics.
+              schema:
+                type: string
+                enum:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authenticated Clerk identity could not be verified
+          headers:
+            Cache-Control:
+              description: All responses from this private endpoint must prevent storage of personal metrics.
+              schema:
+                type: string
+                enum:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated account is disabled
+          headers:
+            Cache-Control:
+              description: All responses from this private endpoint must prevent storage of personal metrics.
+              schema:
+                type: string
+                enum:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Progress could not be loaded; internal error details are not exposed
+          headers:
+            Cache-Control:
+              description: All responses from this private endpoint must prevent storage of personal metrics.
+              schema:
+                type: string
+                enum:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /auth/me:
     get:
       operationId: getCurrentUser
@@ -159,7 +415,7 @@ paths:
       operationId: getPracticeHistory
       tags: [practice]
       summary: List authenticated user's practice attempts
-      description: Returns only the authenticated user's attempts, newest first, using cursor-based pagination.
+      description: Returns only the authenticated user's attempts, newest first, using cursor-based pagination. Display details are opt-in and use the topic recorded at submission, even when the question moves or either record is disabled.
       security:
         - clerkSession: []
       parameters:
@@ -177,6 +433,13 @@ paths:
           schema:
             type: string
           description: Opaque pagination cursor returned by a previous response.
+        - name: includeDetails
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Include nullable questionCode and topicName display fields. Omitted or false preserves the original response.
       responses:
         "200":
           description: Paginated practice attempt history
@@ -1041,6 +1304,14 @@ components:
         submittedAt:
           type: string
           format: date-time
+        questionCode:
+          type: string
+          nullable: true
+          description: Present only with includeDetails=true. Current question code; null if unavailable.
+        topicName:
+          type: string
+          nullable: true
+          description: Present only with includeDetails=true. Current name of the topic recorded in the attempt, not the question's current topic; null if unavailable.
     PracticeHistoryResponse:
       type: object
       additionalProperties: false
@@ -1168,6 +1439,126 @@ components:
           oneOf:
             - $ref: "#/components/schemas/TopicSummary"
             - type: "null"
+    LearningProgressResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - summary
+        - topics
+      properties:
+        summary:
+          $ref: "#/components/schemas/LearningProgressSummary"
+        topics:
+          type: array
+          description: All ACTIVE topics plus DISABLED topics with this user historical attempts, sorted by displayOrder, topicName, topicId. No unrelated disabled topics are exposed.
+          items:
+            $ref: "#/components/schemas/LearningTopicProgress"
+    LearningProgressSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - totalAttempts
+        - correctAttempts
+        - overallAccuracy
+        - uniqueQuestionsAttempted
+        - availableQuestionCount
+        - coveredQuestionCount
+        - coveragePercent
+      properties:
+        totalAttempts:
+          type: integer
+          minimum: 0
+          description: All historical attempts belonging to the authenticated internal user, regardless of current question or topic status.
+        correctAttempts:
+          type: integer
+          minimum: 0
+          description: Historical attempts whose stored is_correct value is true; never regraded from current answer options.
+        overallAccuracy:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 * correctAttempts / totalAttempts. This is attempt-weighted accuracy, not an average of topic percentages. Rounded to at most two decimal places; zero when the denominator is zero.
+        uniqueQuestionsAttempted:
+          type: integer
+          minimum: 0
+          description: Distinct question_id values across all historical attempts, including disabled or moved questions.
+        availableQuestionCount:
+          type: integer
+          minimum: 0
+          description: Current ACTIVE questions whose current topic is ACTIVE, including questions this user has never attempted.
+        coveredQuestionCount:
+          type: integer
+          minimum: 0
+          description: Distinct currently available questions for which this user has any historical attempt, regardless of its stored topic_id or correctness.
+        coveragePercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 * coveredQuestionCount / availableQuestionCount. Measures current catalog coverage, not mastery. Rounded to at most two decimal places; zero when the denominator is zero.
+    LearningTopicProgress:
+      type: object
+      additionalProperties: false
+      required:
+        - topicId
+        - topicName
+        - status
+        - displayOrder
+        - totalAttempts
+        - correctAttempts
+        - accuracy
+        - uniqueQuestionsAttempted
+        - availableQuestionCount
+        - coveredQuestionCount
+        - coveragePercent
+      properties:
+        topicId:
+          type: string
+          format: uuid
+          description: Existing topic ID. Matches stored attempt.topic_id for historical metrics and current question.topic_id for coverage.
+        topicName:
+          type: string
+          minLength: 1
+          maxLength: 180
+          description: Current topic name; historical names are not snapshotted.
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - DISABLED
+          description: Current topic status. A DISABLED topic is returned only when this user has historical attempts attributed to it.
+        displayOrder:
+          type: integer
+          description: Current catalog display order; topics are sorted by displayOrder, topicName, then topicId.
+        totalAttempts:
+          type: integer
+          minimum: 0
+          description: Historical attempts belonging to this user with stored topic_id equal to topicId.
+        correctAttempts:
+          type: integer
+          minimum: 0
+          description: Those historical topic attempts with stored is_correct = true.
+        accuracy:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 * correctAttempts / totalAttempts for this historical topic cohort. Rounded to at most two decimal places; zero when the denominator is zero.
+        uniqueQuestionsAttempted:
+          type: integer
+          minimum: 0
+          description: Distinct question_id values in this user historical attempts attributed to this topic; includes disabled or subsequently moved questions.
+        availableQuestionCount:
+          type: integer
+          minimum: 0
+          description: Current ACTIVE questions assigned to this topic when the topic is ACTIVE; zero for a DISABLED topic.
+        coveredQuestionCount:
+          type: integer
+          minimum: 0
+          description: Distinct currently available questions in this topic with any historical attempt by this user, including attempts originally attributed to another topic.
+        coveragePercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 * coveredQuestionCount / availableQuestionCount for this current topic catalog. Rounded to at most two decimal places; zero when the denominator is zero.
     CurrentUser:
       type: object
       required:

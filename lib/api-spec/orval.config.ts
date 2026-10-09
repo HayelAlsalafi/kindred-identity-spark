@@ -1,4 +1,4 @@
-import { defineConfig, InputTransformerFn } from "orval";
+import { defineConfig, type InputTransformerFn } from "orval";
 import path from "path";
 
 const root = path.resolve(__dirname, "..", "..");
@@ -28,7 +28,7 @@ export default defineConfig({
       mode: "split",
       baseUrl: "/api",
       clean: true,
-      prettier: true,
+      formatter: "prettier",
       override: {
         fetch: {
           includeHttpResponseReturnType: false,
@@ -54,7 +54,7 @@ export default defineConfig({
       schemas: { path: "generated/types", type: "typescript" },
       mode: "split",
       clean: true,
-      prettier: true,
+      formatter: "prettier",
       override: {
         zod: {
           // Orval resolves `auto` from lib/api-spec/package.json, which has no

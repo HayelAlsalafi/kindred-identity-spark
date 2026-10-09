@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Response } from "express";
 import {
   GetPracticeHistoryResponse,
+  GetPracticeHistoryWithDetailsResponse,
   GetPracticeQuestionResponse,
   SubmitPracticeAnswerBody,
   SubmitPracticeAnswerResponse,
@@ -33,6 +34,14 @@ router.get(
 
     const rawLimit = req.query["limit"];
     const rawCursor = req.query["cursor"];
+    const rawDetails = req.query["includeDetails"];
+    if (rawDetails !== undefined && rawDetails !== "true" && rawDetails !== "false") {
+      res.status(400).json({
+        error: { code: "VALIDATION_ERROR", message: "includeDetails must be true or false." },
+      });
+      return;
+    }
+    const includeDetails = rawDetails === "true";
 
     if (
       (rawLimit !== undefined &&
@@ -58,9 +67,14 @@ router.get(
         req.dbUser.id,
         limit,
         rawCursor as string | undefined,
+        undefined,
+        includeDetails,
       );
 
-      res.json(GetPracticeHistoryResponse.parse(result));
+      const schema = includeDetails
+        ? GetPracticeHistoryWithDetailsResponse
+        : GetPracticeHistoryResponse;
+      res.json(schema.parse(result));
     } catch (error) {
       if (error instanceof Error &&
           error.message === "Invalid practice history cursor") {
