@@ -51,7 +51,7 @@ describe.skipIf(!testUrl)("learning progress isolated PostgreSQL", () => {
     client = await pool.connect();
     const identity = await client.query(`
       SELECT current_database() AS database,
-        inet_server_addr()::text AS address,
+        host(inet_server_addr()) AS address,
         current_setting('neon.branch_id', true) AS neon_branch
     `);
     expect(identity.rows[0].database).toMatch(/^ccna_progress_test(?:_[a-z0-9]+)?$/);

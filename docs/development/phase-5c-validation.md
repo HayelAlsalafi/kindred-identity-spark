@@ -1,4 +1,51 @@
-# Phase 5C.5A / 5C.5A-Fix — Final Validation & Git Audit
+# Phase 5C.6 — Final Review & PR #11 Closure Preparation
+
+Reviewed on 2026-10-10 (Asia/Riyadh). This section supersedes the historical validation status below. PR closure and merge have **not** occurred; Phase 6 must wait until PR #11 is closed.
+
+## Git and scope review
+
+- Current checkout: `phase-5b2-practice-history-ui`; local `feature/phase-5c-learning-progress` and PR #11 head point to the same commit, `9eb1cb68b81402c241cdb5729dcedd4dbaf3dfde`. No branch switch was performed.
+- GitHub `main`: `ed69cb4d3e5f480ea024f65216cae2300a198886`. The branches diverge by one commit each, with merge base `821e20f1181b368cffac0250b5ec7623b3a7f2eb`; the main tree matches that merge base. The PR contains one feature commit and 47 scoped files. GitHub reports `mergeable=true`; no current merge conflict or unrelated committed change was found in the reviewed diff.
+- The two PostgreSQL test changes remain uncommitted: replace `inet_server_addr()::text` with `host(inet_server_addr())` in the Progress and History integration tests. HEAD contains the old expression, and history search found no commit with the replacement in either file. `host()` removes the inet network suffix before comparison with the loopback address allowlist; URL, database-name and server identity restrictions remain enforced.
+- Proposed next commit: those two one-line test fixes and updates to this validation document and `phase-5c-git-manifest.md` only. The published 47-file feature must not be staged again. The current checkout name differs from the PR branch; resolve the target branch explicitly before any later authorized commit/push.
+- The 53 pre-existing local paths (48 generated type files, `package.json`, three local tools and `local-environment.md`) remain excluded and protected. No environment file, dependency, lockfile, build output or `.local` file belongs in the proposed commit.
+
+## Verified test evidence
+
+| Check | Result | Evidence and scope |
+| --- | --- | --- |
+| Workspace TypeScript | Passed, exit 0 | Re-run 2026-10-10; libraries, API, frontend, mockup sandbox and scripts |
+| Four Orval configurations | Passed, exit 0 | Typecheck only; no generation |
+| API non-DB tests | 145 passed, 0 failed, 0 skipped | Re-run across 10 files; DB suites excluded |
+| Frontend tests | 68 passed, 0 failed, 0 skipped | Re-run across 5 files |
+| API build | Passed, exit 0 | Original package build; output not executed |
+| Frontend production build | Passed, exit 0 | Original Vite config with environment-file loading disabled; 1,881 modules |
+| Isolated PostgreSQL tests | 16 passed, 0 failed, 0 skipped | Prior 2026-10-09 19:32 Riyadh JSON evidence: 11 Progress + 5 History; not re-run in 5C.6 |
+| Clerk login and ordinary account isolation | User-confirmed manual success | Accounts A/B login, Progress, History and attempts isolation confirmed in the phase handoff; no new live test in 5C.6 |
+| Clerk session switch during delayed Submit | **Not Verified** | Incomplete because of the test tooling; temporarily deferred by the approved user decision |
+
+New local evidence is saved under the ignored `.local/tests/phase5c6-20261010/` directory. PostgreSQL evidence was read directly from `.local/tests/phase5c5e-fix-afc82764-77f7-4a3a-9a6d-b848caf2072e/integration-results.json`: success=true, 16 total/passed, zero failed/pending, both suites passed. These evidence files are not commit inputs. Do not combine the earlier PostgreSQL execution and today's 213 non-DB successes into a claim that all 229 tests were re-run today.
+
+Local validation strips inherited database/PG/Neon/Clerk/secret settings from child processes, sets `RUN_DB_TESTS=0`, and disables Vite/Vitest environment-file loading. Sandbox initially prevented esbuild from reading paths; test/build re-runs with execution approval passed. No Neon or Replit service was used, no database connection was opened, and no environment file was modified. Build outputs were backed up first. The existing `tooltip.tsx` sourcemap warning remains non-blocking; no large-chunk warning was emitted.
+
+## CI and merge readiness
+
+[PR #11](https://github.com/HayelAlsalafi/kindred-identity-spark/pull/11) is open, Draft and unmerged. No reviews or inline review threads were present at review time. [CI run 37954728772](https://github.com/HayelAlsalafi/kindred-identity-spark/actions/runs/37954728772) passed for published head `9eb1cb6`, including clean checkout, frozen-lockfile install, TypeScript, Orval typecheck, frontend/API tests and production builds. CI excludes live PostgreSQL integration tests and does not perform the delayed Clerk scenario.
+
+The successful CI run does **not** validate the two uncommitted test fixes or this documentation update. After separately authorized commit/push to the PR branch, require successful CI on the resulting PR head and review its final diff before recommending merge. No commit, push, merge, history rewrite or Phase 6 work is authorized in this review.
+
+## Known Limitations / Pending Validation
+
+- **Residual risk before production — Not Verified:** switching a real Clerk user or session while Practice Submit is delayed was not completed. The pause is a time-management decision caused by test tooling; it is neither a pass nor evidence of an application failure. A late answer/result or stale personal cache could be shown after a session transition if the integration behaves differently from the tested guards. Unit/cache tests and ordinary two-account isolation are useful evidence, but do not establish this live scenario.
+- Before production, resume the scenario using reliable request interception: submit as A, delay the response, switch to B (and separately a new session of A), release the response, and verify no old answer/result/selection or personal Progress/History data reaches the new session. Include sign-out and return-to-A cases. Record actual outcomes without tokens or credentials. If it remains unverified, require an explicit production risk decision; the current pause does not approve production release.
+- Publishing the two test fixes and obtaining CI for that new head remain pending. Protected local development tooling remains outside this PR; clean-checkout CI uses committed package commands and does not depend on that tooling.
+- Existing cursors that already lost microseconds cannot recover that precision; restart History pagination from the first page after updating the API. Some older contract/generated comments describe earlier phases; the implementation and current validation status are recorded here.
+
+**Review decision:** no new code defect requiring a broader change was found. Do not merge now: the narrow fixes/documentation still need the user's commit/push approval and CI on the resulting head. Keep the delayed Clerk scenario explicitly Not Verified as a production residual risk. No Git files have been staged during 5C.6; retain the empty index until approval.
+
+---
+
+# Historical record: Phase 5C.5A / 5C.5A-Fix — Final Validation & Git Audit
 
 آخر تحقق: 2026-10-09. النطاق: مراجعة 5C.1–5C.4، ثم إصلاح ملاحظات التدقيق المحددة بموافقة المستخدم فقط.
 

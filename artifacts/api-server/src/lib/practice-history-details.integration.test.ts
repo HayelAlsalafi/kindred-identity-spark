@@ -41,7 +41,7 @@ describe.skipIf(!testUrl)('practice history details isolated PostgreSQL', () => 
     pool = new Pool({ connectionString: testUrl, max: 1, connectionTimeoutMillis: 5000 });
     client = await pool.connect();
     const identity = await client.query(
-      "SELECT current_database() AS database, inet_server_addr()::text AS address, current_setting('neon.branch_id', true) AS neon_branch",
+      "SELECT current_database() AS database, host(inet_server_addr()) AS address, current_setting('neon.branch_id', true) AS neon_branch",
     );
     expect(identity.rows[0].database).toMatch(/^ccna_history_test(?:_[a-z0-9]+)?$/);
     expect(['127.0.0.1', '::1']).toContain(identity.rows[0].address);

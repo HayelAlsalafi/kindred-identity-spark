@@ -1,4 +1,29 @@
-# Phase 5C.5B — Git Preparation & Pre-Commit Manifest
+# Phase 5C.6 — Current Narrow Commit Manifest
+
+Reviewed on 2026-10-10 (Asia/Riyadh). The 47-file manifest below is historical: those feature files were already published in `9eb1cb6` and are in PR #11. The next proposed commit has exactly four paths:
+
+| Path | Proposed change |
+| --- | --- |
+| `artifacts/api-server/src/lib/learning-progress.integration.test.ts` | One-line replacement with `host(inet_server_addr())` for the local server address check |
+| `artifacts/api-server/src/lib/practice-history-details.integration.test.ts` | Same one-line local PostgreSQL address correction |
+| `docs/development/phase-5c-validation.md` | Current evidence, CI scope, merge conditions and delayed Clerk Not Verified limitation |
+| `docs/development/phase-5c-git-manifest.md` | This narrow allowlist and protected-work instructions |
+
+Both fixes are absent from HEAD/history and remain local. They change test address normalization only; loopback URL/name checks and server identity restrictions remain enforced. No runtime application, authentication, schema, environment, dependency or generated-client change is proposed.
+
+The current checkout is `phase-5b2-practice-history-ui`, while PR #11 uses `feature/phase-5c-learning-progress`; both point to `9eb1cb68b81402c241cdb5729dcedd4dbaf3dfde`. Before any authorized commit/push, ensure the commit belongs to the PR branch while preserving this checkout's protected work. Do not push the current branch by assumption or rewrite published history.
+
+The 53 pre-existing local paths remain protected and excluded: 48 files under `lib/api-zod/src/generated/types/`, `package.json`, `tools/local-development.mjs`, `tools/local-env.mjs`, `tools/local-env.test.mjs`, and `docs/development/local-environment.md`. Also exclude `.local/`, all environment files and all build outputs. No staging, commit, push or merge was performed during this review; the index remains empty. Do not execute the older 47-file staging instructions below for this follow-up.
+
+After a separate approval, staging must use exactly the four literal paths above, with an initially empty index, then verify `git diff --cached --name-only`, `--check`, the full staged patch and secret scan. Never use `git add .`, reset, clean, amend, rebase or force push. Suggested follow-up commit message: `test(postgres): normalize local server address and record phase 5c review`.
+
+Validation re-run: workspace TypeScript, four Orval configs, 145 API non-DB tests, 68 frontend tests and both production builds passed. Earlier PostgreSQL JSON evidence confirms 16 passed/0 failed/0 skipped on 2026-10-09; no DB tests were re-run in 5C.6. Accounts A/B login and ordinary data isolation are user-confirmed. **Delayed real Clerk session switching during Submit remains Not Verified**, deferred because of test tooling and recorded as a residual production risk, not a passed test.
+
+[Published CI](https://github.com/HayelAlsalafi/kindred-identity-spark/actions/runs/37954728772) passed for `9eb1cb6` from a clean checkout. It does not cover these uncommitted fixes or real Clerk/PostgreSQL validation. Require CI success on the new PR head after authorized publication. [PR #11](https://github.com/HayelAlsalafi/kindred-identity-spark/pull/11) remains open/Draft/unmerged and currently conflict-free. No immediate merge recommendation; see [current validation and remaining risk](phase-5c-validation.md). Phase 6 waits until PR #11 is closed.
+
+---
+
+# Historical record: Phase 5C.5B — Git Preparation & Pre-Commit Manifest
 
 تاريخ المراجعة: 2026-10-09. المرجع: [phase-5c-validation.md](phase-5c-validation.md). هذا Manifest هو التغيير الوحيد في هذه المرحلة. لم يُنفّذ staging أو Commit أو Push أو PR.
 
