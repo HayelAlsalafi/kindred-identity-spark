@@ -761,3 +761,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .mobile-nav { flex-shrink: 0; }
   .mobile-nav a { width: 30px; }
 }
+
+/* Learning progress: history, unique questions and current coverage are distinct. */
+.progress-notice { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper-bright); color: var(--ink-soft); font-size: 13px; line-height: 1.6; }
+.progress-notice h2 { margin: 0 0 4px; color: var(--ink); font-size: 15px; }
+.progress-notice p { margin: 0; }
+.summary-coverage-note { position: relative; z-index: 1; margin: 18px 0 0; color: #b8c5d5; font-size: 12px; line-height: 1.6; }
+.progress-totals { min-width: 0; }
+.progress-totals .quick-row { align-items: baseline; gap: 12px; }
+.progress-totals .quick-label { white-space: normal; }
+.topic-progress-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; margin: 18px 0; }
+.topic-progress-metrics dt { color: var(--ink-soft); font: 10px var(--app-font-mono); line-height: 1.6; }
+.topic-progress-metrics dd { margin: 4px 0 0; color: var(--ink); font: 700 17px var(--app-font-mono); }
+.topic-coverage-count, .topic-unavailable { color: var(--ink-soft); font-size: 11px; line-height: 1.6; margin: 10px 0; }
+.progress-refresh-note { color: var(--ink-soft); font-size: 12px; margin-bottom: 12px; }
+@media (max-width: 720px) { .progress-notice { padding: 14px; } }

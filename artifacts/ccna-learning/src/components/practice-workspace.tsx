@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useAuth } from '@clerk/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { practiceProgressMutationOptions, progressIdentity, sessionQueryKey, type ProgressIdentity } from '../lib/learning-progress-cache';
+import { practiceResultHandler, practiceSessionKey } from '../lib/practice-session';
 import { Link } from 'wouter';
 import { ArrowRight, Check, CircleAlert, LockKeyhole, RefreshCw, Send, Target } from 'lucide-react';
 import {
@@ -20,7 +24,25 @@ function OptionKey({ children }: { children: string }) {
   return <span className="practice-option-key">{children}</span>;
 }
 
-export function PracticeWorkspace({ isAuthLoaded, isSignedIn }: { isAuthLoaded: boolean; isSignedIn: boolean }) {
+type WorkspaceProps = { isAuthLoaded: boolean; isSignedIn: boolean };
+
+export function PracticeWorkspace(props: WorkspaceProps) {
+  const identity = progressIdentity(useAuth());
+  const activeIdentity = useRef(identity);
+  activeIdentity.current = identity;
+  // A new user, session, or sign-out gets entirely new answer/mutation state.
+  return <PracticeSession key={practiceSessionKey(identity)} {...props} identity={identity} activeIdentity={activeIdentity} />;
+}
+
+function PracticeSession({ isAuthLoaded, isSignedIn, identity, activeIdentity }: WorkspaceProps & {
+  identity: ProgressIdentity | null;
+  activeIdentity: RefObject<ProgressIdentity | null>;
+}) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const topicsQuery = useListTopics();
   const topics = [...(topicsQuery.data ?? [])].sort((a, b) => a.displayOrder - b.displayOrder);
   const initialTopicId = new URLSearchParams(window.location.search).get('topicId') ?? '';
@@ -32,12 +54,17 @@ export function PracticeWorkspace({ isAuthLoaded, isSignedIn }: { isAuthLoaded: 
   const topic = topics.find((item) => item.id === topicId);
   const questionQuery = useGetPracticeQuestion(topicId, {
     query: {
-      enabled: Boolean(topicId && topic && isAuthLoaded && isSignedIn),
-      queryKey: getGetPracticeQuestionQueryKey(topicId),
+      enabled: Boolean(topicId && topic && isAuthLoaded && isSignedIn && identity),
+      queryKey: sessionQueryKey(getGetPracticeQuestionQueryKey(topicId), identity),
+      gcTime: 0,
+      placeholderData: () => undefined,
       retry: false,
     },
   });
-  const submitAnswer = useSubmitPracticeAnswer();
+  const queryClient = useQueryClient();
+  const submitAnswer = useSubmitPracticeAnswer<unknown, ReturnType<typeof progressIdentity>>({
+    mutation: practiceProgressMutationOptions(queryClient, identity),
+  });
   const question = questionQuery.data;
   const questionErrorStatus = statusCode(questionQuery.error);
   const submitErrorStatus = statusCode(submitAnswer.error);
@@ -66,10 +93,10 @@ export function PracticeWorkspace({ isAuthLoaded, isSignedIn }: { isAuthLoaded: 
   };
 
   const submit = () => {
-    if (!question || !selectedOption || result || submitAnswer.isPending) return;
+    if (!identity || !question || !selectedOption || result || submitAnswer.isPending) return;
     submitAnswer.mutate(
       { questionId: question.id, data: { optionKey: selectedOption } },
-      { onSuccess: (answerResult) => setResult(answerResult) },
+      { onSuccess: practiceResultHandler(identity, activeIdentity, mounted, setResult) },
     );
   };
 
@@ -125,7 +152,7 @@ export function PracticeWorkspace({ isAuthLoaded, isSignedIn }: { isAuthLoaded: 
               <div className="skeleton" style={{ height: 24, width: '72%', marginTop: 22 }} />
               <div className="skeleton" style={{ height: 44, width: '100%', marginTop: 24 }} />
             </div>
-          ) : !isSignedIn ? (
+          ) : !isSignedIn || !identity ? (
             <div className="practice-state-card practice-access-card" data-testid="state-practice-sign-in">
               <LockKeyhole size={22} />
               <div>

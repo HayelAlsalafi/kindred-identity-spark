@@ -292,7 +292,7 @@ describe("practice history API", () => {
       items: [attempt],
       nextCursor: "next_page_cursor",
     });
-    expect(practiceService.getPracticeHistory).toHaveBeenCalledWith(currentUser!.id, 1, undefined);
+    expect(practiceService.getPracticeHistory).toHaveBeenCalledWith(currentUser!.id, 1, undefined, undefined, false);
   });
 
   it.each([
@@ -341,5 +341,73 @@ describe("practice history API", () => {
     const response = await request("GET", "/practice/history");
     expect(response.status).toBe(403);
     expect(practiceService.getPracticeHistory).not.toHaveBeenCalled();
+  });
+});
+
+// Regression coverage for the additive display-details contract.
+describe("practice history display details", () => {
+  beforeEach(() => signIn(true));
+  const attempt = {
+    id: "55555555-5555-4555-8555-555555555555", questionId, topicId,
+    selectedOptionKey: "B", isCorrect: true, submittedAt: "2026-10-08T10:00:00.000Z",
+  };
+
+  it("returns opt-in display fields and strips answer/explanation/private identity", async () => {
+    practiceService.getPracticeHistory.mockResolvedValue({
+      items: [{ ...attempt, questionCode: "CCNA-Q-000001", topicName: "Original topic",
+        explanation: "PRIVATE", correctOption: { optionKey: "B" }, userId: "PRIVATE" }],
+      nextCursor: "same_cursor",
+    });
+    const response = await request("GET", "/practice/history?includeDetails=true&limit=1");
+    expect(response.status).toBe(200);
+    expect(await json(response)).toEqual({
+      items: [{ ...attempt, questionCode: "CCNA-Q-000001", topicName: "Original topic" }], nextCursor: "same_cursor",
+    });
+    expect(practiceService.getPracticeHistory).toHaveBeenCalledWith(currentUser!.id, 1, undefined, undefined, true);
+  });
+
+  it.each(["", "?includeDetails=false"])("preserves old wire response for %s", async (query) => {
+    practiceService.getPracticeHistory.mockResolvedValue({
+      items: [{ ...attempt, questionCode: "CCNA-Q-000001", topicName: "Original topic" }], nextCursor: null,
+    });
+    const response = await request("GET", "/practice/history" + query);
+    expect(response.status).toBe(200);
+    expect(await json(response)).toEqual({ items: [attempt], nextCursor: null });
+  });
+
+  it("preserves null display fields without dropping an attempt", async () => {
+    practiceService.getPracticeHistory.mockResolvedValue({
+      items: [{ ...attempt, questionCode: null, topicName: null }], nextCursor: null,
+    });
+    const response = await request("GET", "/practice/history?includeDetails=true");
+    expect(response.status).toBe(200);
+    expect((await json(response)).items).toEqual([{ ...attempt, questionCode: null, topicName: null }]);
+  });
+
+  it.each(["1", "TRUE", "", "true&includeDetails=false", "true&includeDetails=true"])(
+    "rejects malformed or repeated includeDetails=%s", async (value) => {
+      const response = await request("GET", "/practice/history?includeDetails=" + value);
+      expect(response.status).toBe(400);
+      expect(practiceService.getPracticeHistory).not.toHaveBeenCalled();
+    },
+  );
+
+  it("takes identity from authentication even when a userId is sent by the client", async () => {
+    practiceService.getPracticeHistory.mockResolvedValue({ items: [], nextCursor: null });
+    const ownId = currentUser!.id;
+    await request("GET", "/practice/history?includeDetails=true&userId=other-user");
+    currentUser = { ...currentUser, id: "00000000-0000-0000-0000-000000000002" };
+    await request("GET", "/practice/history?includeDetails=true&userId=" + ownId);
+    expect(practiceService.getPracticeHistory.mock.calls.map((args) => args[0])).toEqual([ownId, currentUser.id]);
+  });
+
+  it.each([401, 403, 500])("keeps HTTP %s behavior with includeDetails=true", async (status) => {
+    if (status === 401) signIn(false);
+    if (status === 403) currentUser = { ...currentUser, status: "DISABLED" };
+    if (status === 500) practiceService.getPracticeHistory.mockRejectedValue(new Error("PRIVATE"));
+    const response = await request("GET", "/practice/history?includeDetails=true");
+    expect(response.status).toBe(status);
+    expect(await response.text()).not.toContain("PRIVATE");
+    if (status !== 500) expect(practiceService.getPracticeHistory).not.toHaveBeenCalled();
   });
 });
