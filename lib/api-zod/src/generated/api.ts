@@ -672,3 +672,104 @@ export const AdminDisableQuestionResponse = zod.object({
 })
 
 
+/**
+ * @summary Create a topic (ADMIN)
+ */
+export const adminCreateTopicHeaderXAdminSessionMax = 256;
+
+export const adminCreateTopicHeaderXAdminSessionRegExp = new RegExp("^[A-Za-z0-9_-]+$");
+
+export const AdminCreateTopicHeader = zod.object({
+  "X-Admin-Session": zod
+    .string()
+    .min(1)
+    .max(adminCreateTopicHeaderXAdminSessionMax)
+    .regex(adminCreateTopicHeaderXAdminSessionRegExp)
+    .optional()
+    .describe(
+      "Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.",
+    ),
+});
+
+export const adminUpdateTopicHeaderXAdminSessionMax = 256;
+
+export const adminUpdateTopicHeaderXAdminSessionRegExp = new RegExp("^[A-Za-z0-9_-]+$");
+
+export const AdminUpdateTopicHeader = zod.object({
+  "X-Admin-Session": zod
+    .string()
+    .min(1)
+    .max(adminUpdateTopicHeaderXAdminSessionMax)
+    .regex(adminUpdateTopicHeaderXAdminSessionRegExp)
+    .optional()
+    .describe(
+      "Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.",
+    ),
+});
+
+export const adminDisableTopicHeaderXAdminSessionMax = 256;
+
+export const adminDisableTopicHeaderXAdminSessionRegExp = new RegExp("^[A-Za-z0-9_-]+$");
+
+export const AdminDisableTopicHeader = zod.object({
+  "X-Admin-Session": zod
+    .string()
+    .min(1)
+    .max(adminDisableTopicHeaderXAdminSessionMax)
+    .regex(adminDisableTopicHeaderXAdminSessionRegExp)
+    .optional()
+    .describe(
+      "Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.",
+    ),
+});
+
+/**
+ * @summary Create a single-correct multiple-choice question (ADMIN)
+ */
+export const adminCreateQuestionHeaderXAdminSessionMax = 256;
+
+export const adminCreateQuestionHeaderXAdminSessionRegExp = new RegExp("^[A-Za-z0-9_-]+$");
+
+export const AdminCreateQuestionHeader = zod.object({
+  "X-Admin-Session": zod
+    .string()
+    .min(1)
+    .max(adminCreateQuestionHeaderXAdminSessionMax)
+    .regex(adminCreateQuestionHeaderXAdminSessionRegExp)
+    .optional()
+    .describe(
+      "Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.",
+    ),
+});
+
+export const adminUpdateQuestionHeaderXAdminSessionMax = 256;
+
+export const adminUpdateQuestionHeaderXAdminSessionRegExp = new RegExp("^[A-Za-z0-9_-]+$");
+
+export const AdminUpdateQuestionHeader = zod.object({
+  "X-Admin-Session": zod
+    .string()
+    .min(1)
+    .max(adminUpdateQuestionHeaderXAdminSessionMax)
+    .regex(adminUpdateQuestionHeaderXAdminSessionRegExp)
+    .optional()
+    .describe(
+      "Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.",
+    ),
+});
+
+export const adminDisableQuestionHeaderXAdminSessionMax = 256;
+
+export const adminDisableQuestionHeaderXAdminSessionRegExp = new RegExp("^[A-Za-z0-9_-]+$");
+
+export const AdminDisableQuestionHeader = zod.object({
+  "X-Admin-Session": zod
+    .string()
+    .min(1)
+    .max(adminDisableQuestionHeaderXAdminSessionMax)
+    .regex(adminDisableQuestionHeaderXAdminSessionRegExp)
+    .optional()
+    .describe(
+      "Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.",
+    ),
+});
