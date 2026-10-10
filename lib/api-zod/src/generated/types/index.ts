@@ -57,3 +57,4 @@ export * from './practiceQuestionOption';
 export * from './practiceQuestionType';
 export * from './practiceTopic';
 export * from './topicSummary';
+export * from "./adminSessionPreconditionParameter";

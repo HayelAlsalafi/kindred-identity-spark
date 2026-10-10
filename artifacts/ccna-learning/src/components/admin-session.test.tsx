@@ -157,6 +157,7 @@ describe('actual admin managers across Clerk transitions', () => {
     const write = writes().at(-1)!;
     expect(write.url).toContain(question(identity.userId).id);
     expect(JSON.parse(String(write.options.body)).text).toBe('Updated in current session');
+    expect(new Headers(write.options.headers).get('X-Admin-Session')).toBe(identity.sessionId);
   });
 
   it.each([true, false])('sign-out/loading removes admin UI, cached answers, and stale dispatch (loaded=%s)', async loaded => {
@@ -184,7 +185,7 @@ describe('actual admin managers across Clerk transitions', () => {
     expect(client.getQueryCache().getAll().some(q => q.state.data && JSON.stringify(q.state.data).includes('Private explanation admin-a'))).toBe(false);
   });
 
-  it.each(['success', 'error'] as const)('ignores delayed A save %s without clearing B draft/feedback', async outcome => {
+  it.each(['success', 'error', 'conflict'] as const)('ignores delayed A save %s without clearing B draft/feedback', async outcome => {
     await render(); await button('Edit');
     const pending = deferred<Response>(); nextWrite = pending;
     await click('[data-testid="button-save-question"]');
@@ -193,7 +194,7 @@ describe('actual admin managers across Clerk transitions', () => {
     await input('#question-text', 'Unsaved B draft');
     const requestsBefore = calls.length;
     await act(async () => {
-      pending.resolve(outcome === 'success' ? json(question('admin-a')) : json({ error: { message: 'A-only failure' } }, 500));
+      pending.resolve(outcome === 'success' ? json(question('admin-a')) : json({ error: { message: 'A-only failure' } }, outcome === 'conflict' ? 409 : 500));
     });
     expect(find<HTMLTextAreaElement>('#question-text').value).toBe('Unsaved B draft');
     expect(document.querySelector('[data-testid="admin-question-notice"]')).toBeNull();
@@ -248,6 +249,7 @@ describe('actual admin managers across Clerk transitions', () => {
     await click('[data-testid="button-confirm-disable-question"]');
     expect(writes().at(-1)!.url).toBe('/api/admin/questions/' + question('admin-a').id + '/disable');
     expect(container.textContent).toContain('has not been deleted');
+    expect(writes().every(call => new Headers(call.options.headers).get('X-Admin-Session') === a.sessionId)).toBe(true);
   });
 
 
@@ -273,6 +275,7 @@ describe('actual admin managers across Clerk transitions', () => {
     expect(writes().at(-1)!.url).toBe('/api/admin/topics');
     await button('Disable'); await click('[data-testid="button-confirm-disable"]');
     expect(writes().at(-1)!.url).toBe('/api/admin/topics/' + topicId + '/disable');
+    expect(writes().every(call => new Headers(call.options.headers).get('X-Admin-Session') === a.sessionId)).toBe(true);
     await button('Edit');
     clerk.auth = { isLoaded: true, isSignedIn: true, ...b }; await render('topics');
     expect(find<HTMLInputElement>('#topic-name').value).toBe('');
@@ -320,4 +323,19 @@ describe('actual server-access UI boundary', () => {
     expect(document.querySelector('[data-testid="admin-question-manager"]')).toBeNull();
     expect(calls).toHaveLength(0);
   });
+});
+
+// Frontend isolation evidence only: server authentication is tested separately.
+it.each(['questions', 'topics'] as const)('keeps the current %s draft on session conflict without automatic retry', async view => {
+  await render(view); await button('Edit');
+  const pending = deferred<Response>(); nextWrite = pending;
+  const field = view === 'questions' ? '#question-text' : '#topic-name';
+  await input(field, 'Unsaved current draft');
+  await click(view === 'questions' ? '[data-testid="button-save-question"]' : '[data-testid="button-save-topic"]');
+  expect(new Headers(writes().at(-1)!.options.headers).get('X-Admin-Session')).toBe(a.sessionId);
+  await act(async () => { pending.resolve(json({ error: { code: 'ADMIN_SESSION_CHANGED', message: 'The active session changed. Refresh before retrying.' } }, 409)); });
+  expect(find<HTMLInputElement | HTMLTextAreaElement>(field).value).toBe('Unsaved current draft');
+  expect(container.textContent).toContain('Refresh before retrying.');
+  expect(writes()).toHaveLength(1);
+  expect(document.querySelector('[data-testid="admin-' + (view === 'questions' ? 'question' : 'topic') + '-notice"]')).toBeNull();
 });

@@ -55,7 +55,13 @@ export function adminMutationOptions(operation: string, identity: AdminIdentity)
       mutationKey: ['admin-session', operation, { adminSession: adminSessionKey(identity) }],
       gcTime: 0,
     },
-    request: { credentials: 'same-origin' as const, cache: 'no-store' as const },
+    request: {
+      credentials: 'same-origin' as const,
+      cache: 'no-store' as const,
+      // A precondition, never authorization evidence. The server compares this
+      // with Clerk's verified session while still checking the database role.
+      headers: { 'X-Admin-Session': identity.sessionId },
+    },
   };
 }
 

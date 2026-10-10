@@ -537,3 +537,8 @@ export const AdminListQuestionsDifficulty = {
   HARD: 'HARD',
 } as const;
 
+
+/**
+ * Optional initiating Clerk session ID, compared with server-verified Clerk authentication before admin writes. Not authorization evidence. The admin UI sends it on every write. Omission retains existing ADMIN authorization but provides no cross-session intent check. Malformed values return 400; a mismatch returns 409 ADMIN_SESSION_CHANGED, with no domain write. A request already authorized may finish after a browser session switch.
+ */
+export type AdminSessionPreconditionParameter = string;

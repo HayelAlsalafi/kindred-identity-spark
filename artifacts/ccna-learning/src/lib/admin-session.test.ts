@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
-import { getAdminListQuestionsQueryOptions, getAdminListQuestionsQueryKey, getAdminListTopicsQueryKey } from '@workspace/api-client-react';
+import { adminCreateQuestion, getAdminListQuestionsQueryOptions, getAdminListQuestionsQueryKey, getAdminListTopicsQueryKey } from '@workspace/api-client-react';
 import {
   adminAuthState, adminQueryKey, adminQueryOptions, adminMutationOptions,
   removeOtherAdminData, removeAdminSessionData, createAdminLifetime, invalidateAdminQueries,
@@ -141,4 +141,19 @@ describe('admin session cache and lifetime', () => {
     expect(callback()).toBe(false);
     expect(lifetime.scope.capture()()).toBe(true);
   });
+});
+
+it('sends a captured session consistency signal through the real generated mutation transport', async () => {
+  fetchMock.mockResolvedValue(json({ id: 'question' }));
+  const options = adminMutationOptions('adminCreateQuestion', a);
+  // Later identity state cannot change the already prepared precondition.
+  await adminCreateQuestion({} as never, options.request);
+  const [url, request] = fetchMock.mock.calls[0];
+  const headers = new Headers(request.headers);
+  expect(url).toBe('/api/admin/questions');
+  expect(headers.get('X-Admin-Session')).toBe(a.sessionId);
+  expect(headers.get('Authorization')).toBeNull();
+  expect(headers.get('X-User-Id')).toBeNull();
+  expect(request.credentials).toBe('same-origin');
+  expect(request.cache).toBe('no-store');
 });
